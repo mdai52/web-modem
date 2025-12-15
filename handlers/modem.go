@@ -22,43 +22,6 @@ func ListModems(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, ports)
 }
 
-// 连接 Modem
-func ConnectModem(w http.ResponseWriter, r *http.Request) {
-	var req models.ConnectRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, "Invalid request")
-		return
-	}
-
-	// 新逻辑：不再主动连接串口，只在已连接池中切换活动端口
-	if req.Port == "" {
-		respondError(w, http.StatusBadRequest, "port is required")
-		return
-	}
-
-	// 仅确认该端口已在连接池中
-	ports, _ := serialService.ScanAndConnectAll(115200)
-	found := false
-	for _, p := range ports {
-		if p.Path == req.Port && p.Connected {
-			found = true
-			break
-		}
-	}
-	if !found {
-		respondError(w, http.StatusBadRequest, "port not connected, please refresh ports")
-		return
-	}
-
-	respondJSON(w, http.StatusOK, map[string]string{"status": "ok", "port": req.Port})
-}
-
-// 断开 Modem
-func DisconnectModem(w http.ResponseWriter, r *http.Request) {
-	// 兼容接口：不再主动断开单个端口，前端通过刷新/热插拔管理
-	respondJSON(w, http.StatusOK, map[string]string{"status": "noop"})
-}
-
 // 发送 AT 命令
 func SendATCommand(w http.ResponseWriter, r *http.Request) {
 	var cmd models.ATCommand

@@ -18,8 +18,8 @@ import (
 )
 
 type SerialService struct {
-	// 端口池：不再维护“活动端口”，由调用方传入端口名
 	ports      map[string]*serial.Port // 所有已连接可用端口
+	portLocks  map[string]*sync.Mutex  // 每个端口的读写锁，避免命令与监听竞争
 	mu         sync.Mutex
 	listeners  []chan string
 	longSMSMap map[string]*models.LongSMS // 长短信缓存
@@ -36,6 +36,7 @@ func GetSerialService() *SerialService {
 			listeners:  make([]chan string, 0),
 			longSMSMap: make(map[string]*models.LongSMS),
 			ports:      make(map[string]*serial.Port),
+			portLocks:  make(map[string]*sync.Mutex),
 		}
 	})
 	return instance
@@ -111,6 +112,9 @@ func (s *SerialService) ScanAndConnectAll(baudRate int) ([]models.SerialPort, er
 
 		// 视为可用，加入池并启动读取循环
 		s.ports[p] = sp
+		if _, ok := s.portLocks[p]; !ok {
+			s.portLocks[p] = &sync.Mutex{}
+		}
 		go s.readLoopFor(p, sp)
 
 		// 基本初始化
@@ -132,16 +136,17 @@ func (s *SerialService) ScanAndConnectAll(baudRate int) ([]models.SerialPort, er
 	return result, nil
 }
 
-// 旧的单端口逻辑已移除：连接/断开/切换由扫描与端口参数驱动
-
-// 发送 AT 命令（指定端口）
+// 发送 AT 命令（指定端口），使用端口级锁避免与监听竞争
 func (s *SerialService) SendATCommand(portName, command string) (string, error) {
 	s.mu.Lock()
 	port, ok := s.ports[portName]
+	lock := s.portLocks[portName]
 	s.mu.Unlock()
 	if !ok {
 		return "", fmt.Errorf("port not connected: %s", portName)
 	}
+	lock.Lock()
+	defer lock.Unlock()
 	return s.sendCommandPort(port, command+"\r\n")
 }
 
@@ -191,14 +196,20 @@ func (s *SerialService) sendCommandPort(port *serial.Port, command string) (stri
 	}
 }
 
-// 读取循环
-// 多端口读取循环在 readLoopFor 中实现
-
 // 针对指定端口的读取循环
 func (s *SerialService) readLoopFor(name string, port *serial.Port) {
 	buf := make([]byte, 128)
 	for {
+		s.mu.Lock()
+		lock := s.portLocks[name]
+		s.mu.Unlock()
+		if lock == nil {
+			time.Sleep(200 * time.Millisecond)
+			continue
+		}
+		lock.Lock()
 		n, err := port.Read(buf)
+		lock.Unlock()
 		if err != nil {
 			time.Sleep(150 * time.Millisecond)
 			continue
@@ -398,11 +409,14 @@ func (s *SerialService) SendSMS(portName, number, message string) error {
 		// 发送 PDU + Ctrl+Z
 		s.mu.Lock()
 		port := s.ports[portName]
+		lock := s.portLocks[portName]
 		s.mu.Unlock()
-		if port == nil {
+		if port == nil || lock == nil {
 			return fmt.Errorf("port not connected: %s", portName)
 		}
+		lock.Lock()
 		_, err = s.sendCommandPort(port, pdu+"\x1A")
+		lock.Unlock()
 		if err != nil {
 			return fmt.Errorf("failed to send PDU: %v", err)
 		}

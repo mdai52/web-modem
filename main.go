@@ -17,8 +17,6 @@ func main() {
 	// API 路由
 	api := router.PathPrefix("/api/v1").Subrouter()
 	api.HandleFunc("/modems", handlers.ListModems).Methods("GET")
-	api.HandleFunc("/modem/connect", handlers.ConnectModem).Methods("POST")
-	api.HandleFunc("/modem/disconnect", handlers.DisconnectModem).Methods("POST")
 	api.HandleFunc("/modem/send", handlers.SendATCommand).Methods("POST")
 	api.HandleFunc("/modem/info", handlers.GetModemInfo).Methods("GET")
 	api.HandleFunc("/modem/signal", handlers.GetSignalStrength).Methods("GET")
