@@ -1,0 +1,275 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background:  linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+header {
+    background: white;
+    padding: 20px 30px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header h1 {
+    color: #333;
+    font-size: 28px;
+}
+
+.connection-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    background: #f5f5f5;
+    border-radius: 20px;
+}
+
+.status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius:  50%;
+    background: #ff4444;
+    animation: pulse 2s infinite;
+}
+
+. connection-status. connected .status-dot {
+    background: #44ff44;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.main-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+}
+
+.card {
+    background: white;
+    padding: 25px;
+    border-radius:  10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card h2 {
+    color:  #667eea;
+    margin-bottom: 20px;
+    font-size:  20px;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 10px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+. form-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #555;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #e0e0e0;
+    border-radius: 5px;
+    font-size: 14px;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-weight: 500;
+}
+
+. btn-primary {
+    background:  #667eea;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #5568d3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+}
+
+.btn-secondary {
+    background: #f0f0f0;
+    color: #333;
+}
+
+. btn-secondary:hover {
+    background: #e0e0e0;
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+}
+
+.terminal,
+.log {
+    background: #1e1e1e;
+    color: #00ff00;
+    padding: 15px;
+    border-radius:  5px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    height: 300px;
+    overflow-y: auto;
+    margin-top: 15px;
+}
+
+.terminal::-webkit-scrollbar,
+.log::-webkit-scrollbar {
+    width: 8px;
+}
+
+.terminal::-webkit-scrollbar-track,
+.log::-webkit-scrollbar-track {
+    background:  #2e2e2e;
+}
+
+.terminal::-webkit-scrollbar-thumb,
+.log::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 4px;
+}
+
+.info-display {
+    margin-top: 15px;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 5px;
+    border-left: 4px solid #667eea;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #555;
+}
+
+.info-value {
+    color: #333;
+}
+
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.tab {
+    flex: 1;
+    padding:  10px;
+    background: #f0f0f0;
+    border:  none;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.tab.active {
+    background: #667eea;
+    color: white;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.sms-list {
+    margin-top: 15px;
+}
+
+.sms-item {
+    background: #f9f9f9;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    border-left: 4px solid #667eea;
+}
+
+. sms-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 13px;
+    color: #666;
+}
+
+.sms-number {
+    font-weight: 600;
+    color: #667eea;
+}
+
+.sms-message {
+    color:  #333;
+    line-height: 1.6;
+}
+
+.error {
+    color: #ff4444;
+    background: #ffebee;
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+.success {
+    color: #44ff44;
+    background: #e8f5e9;
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 10px;
+}
