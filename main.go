@@ -4,8 +4,10 @@ import (
 	"log"
 	"net/http"
 	"os"
+
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
+
 	"modem-manager/handlers"
 )
 
@@ -22,9 +24,9 @@ func main() {
 	api.HandleFunc("/modem/signal", handlers.GetSignalStrength).Methods("GET")
 	api.HandleFunc("/modem/sms/list", handlers.ListSMS).Methods("GET")
 	api.HandleFunc("/modem/sms/send", handlers.SendSMS).Methods("POST")
-	
+
 	// WebSocket 路由
-	router.HandleFunc("/ws", handlers. HandleWebSocket)
+	router.HandleFunc("/ws", handlers.HandleWebSocket)
 
 	// 静态文件服务
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("frontend")))
@@ -34,7 +36,7 @@ func main() {
 		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"*"},
-		AllowCredentials:  true,
+		AllowCredentials: true,
 	})
 
 	handler := c.Handler(router)

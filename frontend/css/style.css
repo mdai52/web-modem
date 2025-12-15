@@ -151,6 +151,7 @@ button {
     border-radius:  5px;
     font-family: 'Courier New', monospace;
     font-size: 13px;
+    white-space: pre-wrap; /* 保留换行并自动换行，便于日志可读 */
     height: 300px;
     overflow-y: auto;
     margin-top: 15px;

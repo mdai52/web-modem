@@ -12,7 +12,8 @@ var serialService = services.GetSerialService()
 
 // 列出可用串口
 func ListModems(w http.ResponseWriter, r *http.Request) {
-	ports, err := serialService.ListPorts()
+	// 扫描并一次性连接可用串口
+	ports, err := serialService.ScanAndConnectAll(115200)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -29,28 +30,33 @@ func ConnectModem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.BaudRate == 0 {
-		req.BaudRate = 115200
-	}
-
-	err := serialService.Connect(req.Port, req.BaudRate)
-	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+	// 新逻辑：不再主动连接串口，只在已连接池中切换活动端口
+	if req.Port == "" {
+		respondError(w, http.StatusBadRequest, "port is required")
 		return
 	}
 
-	respondJSON(w, http.StatusOK, map[string]string{"status": "connected"})
+	// 仅确认该端口已在连接池中
+	ports, _ := serialService.ScanAndConnectAll(115200)
+	found := false
+	for _, p := range ports {
+		if p.Path == req.Port && p.Connected {
+			found = true
+			break
+		}
+	}
+	if !found {
+		respondError(w, http.StatusBadRequest, "port not connected, please refresh ports")
+		return
+	}
+
+	respondJSON(w, http.StatusOK, map[string]string{"status": "ok", "port": req.Port})
 }
 
 // 断开 Modem
 func DisconnectModem(w http.ResponseWriter, r *http.Request) {
-	err := serialService.Disconnect()
-	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	respondJSON(w, http.StatusOK, map[string]string{"status": "disconnected"})
+	// 兼容接口：不再主动断开单个端口，前端通过刷新/热插拔管理
+	respondJSON(w, http.StatusOK, map[string]string{"status": "noop"})
 }
 
 // 发送 AT 命令
@@ -61,7 +67,12 @@ func SendATCommand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response, err := serialService.SendATCommand(cmd.Command)
+	if cmd.Port == "" {
+		respondError(w, http.StatusBadRequest, "port is required")
+		return
+	}
+
+	response, err := serialService.SendATCommand(cmd.Port, cmd.Command)
 	if err != nil {
 		cmd.Error = err.Error()
 	}
@@ -72,7 +83,9 @@ func SendATCommand(w http.ResponseWriter, r *http.Request) {
 
 // 获取 Modem 信息
 func GetModemInfo(w http.ResponseWriter, r *http.Request) {
-	info, err := serialService.GetModemInfo()
+	p := r.URL.Query().Get("port")
+	if p == "" { respondError(w, http.StatusBadRequest, "port is required"); return }
+	info, err := serialService.GetModemInfo(p)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -83,7 +96,9 @@ func GetModemInfo(w http.ResponseWriter, r *http.Request) {
 
 // 获取信号强度
 func GetSignalStrength(w http.ResponseWriter, r *http.Request) {
-	signal, err := serialService.GetSignalStrength()
+	p := r.URL.Query().Get("port")
+	if p == "" { respondError(w, http.StatusBadRequest, "port is required"); return }
+	signal, err := serialService.GetSignalStrength(p)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -94,7 +109,9 @@ func GetSignalStrength(w http.ResponseWriter, r *http.Request) {
 
 // 列出短信
 func ListSMS(w http.ResponseWriter, r *http.Request) {
-	smsList, err := serialService.ListSMS()
+	p := r.URL.Query().Get("port")
+	if p == "" { respondError(w, http.StatusBadRequest, "port is required"); return }
+	smsList, err := serialService.ListSMS(p)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -111,7 +128,12 @@ func SendSMS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := serialService.SendSMS(req.Number, req.Message)
+	if req.Port == "" {
+		respondError(w, http.StatusBadRequest, "port is required")
+		return
+	}
+
+	err := serialService.SendSMS(req.Port, req.Number, req.Message)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return

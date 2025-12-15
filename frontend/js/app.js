@@ -69,8 +69,8 @@ class ModemManager {
     // WebSocket 连接
     setupWebSocket() {
         this.ws = new WebSocket(this.wsUrl);
-        
-        this. ws.onopen = () => {
+
+        this.ws.onopen = () => {
             this.addLog('WebSocket 连接已建立');
         };
 
@@ -82,7 +82,7 @@ class ModemManager {
             this.addLog('WebSocket 错误: ' + error);
         };
 
-        this. ws.onclose = () => {
+        this.ws.onclose = () => {
             this.addLog('WebSocket 连接已断开');
             setTimeout(() => this.setupWebSocket(), 5000);
         };
@@ -124,11 +124,17 @@ class ModemManager {
             select.innerHTML = '<option value="">-- 选择串口 --</option>';
             
             ports.forEach(port => {
-                const option = document. createElement('option');
-                option. value = port.path;
-                option.textContent = port.name;
-                select. appendChild(option);
+                const option = document.createElement('option');
+                option.value = port.path;
+                option.textContent = port.name + (port.connected ? ' ✅' : '');
+                select.appendChild(option);
             });
+
+            // 自动选择第一个已连接端口，减少“port is required”误点击
+            const connected = ports.find(p => p.connected);
+            if (connected) {
+                select.value = connected.path;
+            }
             
             this.addLog('已刷新串口列表');
         } catch (error) {
@@ -136,20 +142,26 @@ class ModemManager {
         }
     }
 
+    // 获取已选择端口，若无则提示
+    getSelectedPort() {
+        const port = document.getElementById('portSelect').value;
+        if (!port) {
+            this.showError('请选择可用串口');
+            return null;
+        }
+        return port;
+    }
+
     // 连接 Modem
     async connect() {
-        const port = document.getElementById('portSelect').value;
-        const baudRate = parseInt(document.getElementById('baudRate').value);
-
-        if (!port) {
-            this.showError('请选择串口');
-            return;
-        }
+        const port = this.getSelectedPort();
+        if (!port) return;
 
         try {
-            await this.apiRequest('/modem/connect', 'POST', { port, baudRate });
+            // 后端已改为仅切换活动端口
+            await this.apiRequest('/modem/connect', 'POST', { port });
             this.updateConnectionStatus(true);
-            this.addLog(`已连接到 ${port} (${baudRate} bps) - PDU 模式`);
+            this.addLog(`已切换到端口 ${port}`);
         } catch (error) {
             console.error('连接失败:', error);
         }
@@ -157,18 +169,16 @@ class ModemManager {
 
     // 断开 Modem
     async disconnect() {
-        try {
-            await this.apiRequest('/modem/disconnect', 'POST');
-            this.updateConnectionStatus(false);
-            this.addLog('已断开连接');
-        } catch (error) {
-            console.error('断开失败:', error);
-        }
+        // 后端不再提供单端口断开，这里仅重置前端状态
+        this.updateConnectionStatus(false);
+        this.addLog('已清除前端连接状态');
     }
 
     // 发送 AT 命令
     async sendATCommand() {
-        const command = document. getElementById('atCommand').value.trim();
+        const command = document.getElementById('atCommand').value.trim();
+        const port = this.getSelectedPort();
+        if (!port) return;
         
         if (! command) {
             this.showError('请输入 AT 命令');
@@ -176,7 +186,7 @@ class ModemManager {
         }
 
         try {
-            const result = await this.apiRequest('/modem/send', 'POST', { command });
+            const result = await this.apiRequest('/modem/send', 'POST', { command, port });
             this.addToTerminal(`> ${command}`);
             this.addToTerminal(result.response);
             document.getElementById('atCommand').value = '';
@@ -188,7 +198,9 @@ class ModemManager {
     // 获取 Modem 信息
     async getModemInfo() {
         try {
-            const info = await this.apiRequest('/modem/info');
+            const port = this.getSelectedPort();
+            if (!port) return;
+            const info = await this.apiRequest('/modem/info' + (port ? `?port=${encodeURIComponent(port)}` : ''));
             this.displayModemInfo(info);
         } catch (error) {
             console.error('获取信息失败:', error);
@@ -198,7 +210,9 @@ class ModemManager {
     // 获取信号强度
     async getSignalStrength() {
         try {
-            const signal = await this.apiRequest('/modem/signal');
+            const port = this.getSelectedPort();
+            if (!port) return;
+            const signal = await this.apiRequest('/modem/signal' + (port ? `?port=${encodeURIComponent(port)}` : ''));
             this.displaySignalInfo(signal);
         } catch (error) {
             console.error('获取信号强度失败:', error);
@@ -209,7 +223,9 @@ class ModemManager {
     async listSMS() {
         try {
             this.addLog('正在读取短信列表（PDU 模式）.. .');
-            const smsList = await this.apiRequest('/modem/sms/list');
+            const port = this.getSelectedPort();
+            if (!port) return;
+            const smsList = await this.apiRequest('/modem/sms/list' + (port ? `?port=${encodeURIComponent(port)}` : ''));
             this.displaySMSList(smsList);
             this.addLog(`已读取 ${smsList.length} 条短信`);
         } catch (error) {
@@ -221,6 +237,8 @@ class ModemManager {
     async sendSMS() {
         const number = document. getElementById('smsNumber').value.trim();
         const message = document.getElementById('smsMessage').value.trim();
+        const port = this.getSelectedPort();
+        if (!port) return;
 
         if (!number || !message) {
             this.showError('请输入号码和短信内容');
@@ -230,6 +248,7 @@ class ModemManager {
         try {
             this.addLog('正在发送短信（支持中文和长短信）...');
             await this.apiRequest('/modem/sms/send', 'POST', { 
+                port,
                 number, 
                 message,
                 usePDU: true 
@@ -321,11 +340,11 @@ class ModemManager {
     }
 
     // 切换标签页
-    switchTab(tabName) {
+    switchTab(tabName, el) {
         document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-        document.querySelectorAll('. tab-content').forEach(content => content.classList.remove('active'));
-        
-        event.target.classList.add('active');
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+        if (el) el.classList.add('active');
         document.getElementById(tabName + 'Tab').classList.add('active');
     }
 

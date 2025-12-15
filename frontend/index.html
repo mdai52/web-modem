@@ -27,16 +27,6 @@
                     </select>
                     <button onclick="app.refreshPorts()">🔄 刷新</button>
                 </div>
-                <div class="form-group">
-                    <label>波特率:</label>
-                    <select id="baudRate">
-                        <option value="9600">9600</option>
-                        <option value="19200">19200</option>
-                        <option value="38400">38400</option>
-                        <option value="57600">57600</option>
-                        <option value="115200" selected>115200</option>
-                    </select>
-                </div>
                 <div class="button-group">
                     <button class="btn-primary" onclick="app.connect()">连接</button>
                     <button class="btn-secondary" onclick="app.disconnect()">断开</button>
@@ -65,8 +55,8 @@
             <section class="card">
                 <h2>短信管理</h2>
                 <div class="tabs">
-                    <button class="tab active" onclick="app.switchTab('receive')">接收短信</button>
-                    <button class="tab" onclick="app.switchTab('send')">发送短信</button>
+                    <button class="tab active" onclick="app.switchTab('receive', this)">接收短信</button>
+                    <button class="tab" onclick="app.switchTab('send', this)">发送短信</button>
                 </div>
 
                 <div id="receiveTab" class="tab-content active">

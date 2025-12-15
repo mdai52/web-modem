@@ -12,6 +12,7 @@ type ModemInfo struct {
 }
 
 type ATCommand struct {
+	Port     string `json:"port,omitempty"`
 	Command  string `json:"command"`
 	Response string `json:"response"`
 	Error    string `json:"error,omitempty"`
@@ -32,6 +33,7 @@ type SMS struct {
 }
 
 type SendSMSRequest struct {
+	Port    string `json:"port,omitempty"`
 	Number  string `json:"number"`
 	Message string `json:"message"`
 	UsePDU  bool   `json:"usePDU"` // 是否使用 PDU 模式
@@ -39,12 +41,12 @@ type SendSMSRequest struct {
 
 type ConnectRequest struct {
 	Port     string `json:"port"`
-	BaudRate int    `json:"baudRate"`
 }
 
 type SerialPort struct {
 	Name string `json:"name"`
 	Path string `json:"path"`
+	Connected bool `json:"connected"`
 }
 
 // 长短信片段
