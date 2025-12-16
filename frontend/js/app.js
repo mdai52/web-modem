@@ -62,14 +62,6 @@ class ModemManager {
                 if (connected) select.value = connected.path;
             }
             this.addLog('已刷新串口列表');
-            const selectedPath = select.value;
-            const selectedPort = ports.find(p => p.path === selectedPath && p.connected);
-            this.updateConnectionStatus(!!selectedPort, selectedPort ? selectedPort.path : '');
-            select.onchange = () => {
-                const val = select.value;
-                const item = ports.find(p => p.path === val && p.connected);
-                this.updateConnectionStatus(!!item, item ? item.path : '');
-            };
         } catch (error) {
             console.error('刷新串口失败:', error);
         }
@@ -194,18 +186,6 @@ class ModemManager {
             return null;
         }
         return port;
-    }
-
-    updateConnectionStatus(connected, portLabel = '') {
-        const statusElement = document.getElementById('connectionStatus');
-        const statusText = document.getElementById('statusText');
-        if (connected) {
-            statusElement.classList.add('connected');
-            statusText.textContent = portLabel ? `已选择 ${portLabel}` : '已连接';
-        } else {
-            statusElement.classList.remove('connected');
-            statusText.textContent = '未连接';
-        }
     }
 
     addToTerminal(text) {
