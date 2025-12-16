@@ -27,6 +27,11 @@ button:hover {
     background: #5568d3;
 }
 
+button:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
 select {
     min-width: 200px;
     height: 40px;

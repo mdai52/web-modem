@@ -1,5 +1,10 @@
+const $ = document.querySelector.bind(document);
+const $$ = document.querySelectorAll.bind(document);
+const $$$ = document.createElement.bind(document);
+
 class ModemManager {
     constructor() {
+        this.isBusy = false;
         this.apiBase = '/api/v1';
         this.wsUrl = `ws://${location.host}/ws`;
         this.ws = null;
@@ -28,16 +33,26 @@ class ModemManager {
     // ---------- API ----------
 
     async apiRequest(endpoint, method = 'GET', body = null) {
+        if (this.isBusy) {
+            this.showError('当前有请求正在进行，请稍候');
+            throw new Error('请求被阻断');
+        }
+
+        this.toggleButtons(true);
         const options = { method, headers: { 'Content-Type': 'application/json' } };
         if (body) options.body = JSON.stringify(body);
-        const response = await fetch(this.apiBase + endpoint, options);
-        const data = await response.json();
-        if (!response.ok) {
-            const msg = data.error || '请求失败';
-            this.showError(msg);
-            throw new Error(msg);
+        try {
+            const response = await fetch(this.apiBase + endpoint, options);
+            const data = await response.json();
+            if (!response.ok) {
+                const msg = data.error || '请求失败';
+                this.showError(msg);
+                throw new Error(msg);
+            }
+            return data;
+        } finally {
+            this.toggleButtons(false);
         }
-        return data;
     }
 
     // ---------- Port & actions ----------
@@ -45,7 +60,7 @@ class ModemManager {
     async refreshPorts() {
         try {
             const ports = await this.apiRequest('/modems');
-            const select = document.getElementById('portSelect');
+            const select = $('#portSelect');
             const current = select.value;
             select.innerHTML = '<option value="">-- 选择串口 --</option>';
             ports.forEach(port => {
@@ -70,7 +85,7 @@ class ModemManager {
     async sendATCommand() {
         const port = this.getSelectedPort();
         if (!port) return;
-        const command = document.getElementById('atCommand').value.trim();
+        const command = $('#atCommand').value.trim();
         if (!command) {
             this.showError('请输入 AT 命令');
             return;
@@ -79,7 +94,7 @@ class ModemManager {
             const result = await this.apiRequest('/modem/send', 'POST', { port, command });
             this.addToTerminal(`> ${command}`);
             this.addToTerminal(result.response || '');
-            document.getElementById('atCommand').value = '';
+            $('#atCommand').value = '';
         } catch (error) {
             console.error('发送命令失败:', error);
         }
@@ -123,8 +138,8 @@ class ModemManager {
     async sendSMS() {
         const port = this.getSelectedPort();
         if (!port) return;
-        const number = document.getElementById('smsNumber').value.trim();
-        const message = document.getElementById('smsMessage').value.trim();
+        const number = $('#smsNumber').value.trim();
+        const message = $('#smsMessage').value.trim();
         if (!number || !message) {
             this.showError('请输入号码和短信内容');
             return;
@@ -133,8 +148,8 @@ class ModemManager {
             this.addLog('正在发送短信（支持中文和长短信）...');
             await this.apiRequest('/modem/sms/send', 'POST', { port, number, message });
             this.showSuccess('短信发送成功！');
-            document.getElementById('smsNumber').value = '';
-            document.getElementById('smsMessage').value = '';
+            $('#smsNumber').value = '';
+            $('#smsMessage').value = '';
             this.updateSMSCounter();
         } catch (error) {
             console.error('发送短信失败:', error);
@@ -144,11 +159,11 @@ class ModemManager {
     // ---------- SMS counter ----------
 
     setupSMSCounter() {
-        const textarea = document.getElementById('smsMessage');
+        const textarea = $('#smsMessage');
         if (!textarea) return;
-        const existing = document.getElementById('smsCounter');
+        const existing = $('#smsCounter');
         if (!existing) {
-            const counter = document.createElement('div');
+            const counter = $$$('div');
             counter.id = 'smsCounter';
             counter.style.cssText = 'margin-top: 5px; color: #666; font-size: 12px;';
             textarea.parentNode.appendChild(counter);
@@ -158,8 +173,8 @@ class ModemManager {
     }
 
     updateSMSCounter() {
-        const textarea = document.getElementById('smsMessage');
-        const counter = document.getElementById('smsCounter');
+        const textarea = $('#smsMessage');
+        const counter = $('#smsCounter');
         if (!textarea || !counter) return;
         const message = textarea.value;
         const hasUnicode = /[^\x00-\x7F]/.test(message);
@@ -179,8 +194,15 @@ class ModemManager {
 
     // ---------- UI helpers ----------
 
+    toggleButtons(disabled) {
+        this.isBusy = disabled;
+        $$('button').forEach(btn => btn.disabled = disabled);
+        $$('select').forEach(btn => btn.disabled = disabled);
+        $('#refreshBtn').innerText = disabled ? '加载中...' : '刷新';
+    }
+
     getSelectedPort() {
-        const port = document.getElementById('portSelect').value;
+        const port = $('#portSelect').value;
         if (!port) {
             this.showError('请选择可用串口');
             return null;
@@ -189,20 +211,20 @@ class ModemManager {
     }
 
     addToTerminal(text) {
-        const terminal = document.getElementById('terminal');
+        const terminal = $('#terminal');
         terminal.innerHTML += this.escapeHtml(text) + '\n';
         terminal.scrollTop = terminal.scrollHeight;
     }
 
     addLog(text) {
-        const log = document.getElementById('log');
+        const log = $('#log');
         const timestamp = new Date().toLocaleTimeString();
         log.innerHTML += `[${timestamp}] ${this.escapeHtml(text)}\n`;
         log.scrollTop = log.scrollHeight;
     }
 
     clearLog() {
-        document.getElementById('log').innerHTML = '';
+        $('#log').innerHTML = '';
     }
 
     showError(message) {
@@ -215,7 +237,7 @@ class ModemManager {
     }
 
     escapeHtml(text) {
-        const div = document.createElement('div');
+        const div = $$$('div');
         div.textContent = text;
         return div.innerHTML;
     }
@@ -223,7 +245,7 @@ class ModemManager {
     // ---------- Render ----------
 
     displayModemInfo(info) {
-        const container = document.getElementById('modemInfo');
+        const container = $('#modemInfo');
         container.innerHTML = `
             <div class="info-item"><span class="info-label">串口:</span><span class="info-value">${info.port || '-'}</span></div>
             <div class="info-item"><span class="info-label">制造商:</span><span class="info-value">${info.manufacturer || '-'}</span></div>
@@ -235,7 +257,7 @@ class ModemManager {
     }
 
     displaySignalInfo(signal) {
-        const container = document.getElementById('modemInfo');
+        const container = $('#modemInfo');
         container.innerHTML = `
             <div class="info-item"><span class="info-label">信号强度 (RSSI):</span><span class="info-value">${signal.rssi}</span></div>
             <div class="info-item"><span class="info-label">信号质量:</span><span class="info-value">${signal.quality}</span></div>
@@ -244,7 +266,7 @@ class ModemManager {
     }
 
     displaySMSList(smsList) {
-        const container = document.getElementById('smsList');
+        const container = $('#smsList');
         if (!smsList || smsList.length === 0) {
             container.innerHTML = '<p>暂无短信</p>';
             return;
@@ -262,7 +284,7 @@ class ModemManager {
 }
 
 const app = new ModemManager();
-document.getElementById('atCommand')?.addEventListener('keypress', (e) => {
+$('#atCommand')?.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
         app.sendATCommand();
     }
