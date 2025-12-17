@@ -132,37 +132,11 @@ main {
     border-color: #667eea;
 }
 
-.terminal,
-.log {
-    background: #1e1e1e;
-    color: #00ff00;
-    padding: 16px;
-    border-radius: 5px;
-    font-family: 'Courier New', monospace;
-    font-size: 13px;
-    white-space: pre-wrap;
-    height: 300px;
-    overflow-y: auto;
-    margin-top: 16px;
-}
-
-.info-display {
-    margin-top: 16px;
-    padding: 16px;
-    background: #f9f9f9;
-    border-radius: 5px;
-    border-left: 4px solid #667eea;
-}
-
 .info-item {
     display: flex;
     justify-content: space-between;
-    padding: 8px 0;
     border-bottom: 1px solid #e0e0e0;
-}
-
-.info-item:last-child {
-    border-bottom: none;
+    padding: 8px 0;
 }
 
 .info-label {
@@ -202,4 +176,17 @@ main {
 .sms-message {
     color: #333;
     line-height: 1.6;
+}
+
+.log,
+.terminal {
+    background: #1e1e1e;
+    color: #00ff00;
+    padding: 16px;
+    border-radius: 5px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    white-space: pre-wrap;
+    height: 300px;
+    overflow-y: auto;
 }

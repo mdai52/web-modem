@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
+	"modem-manager/services"
 )
 
 var upgrader = websocket.Upgrader{
@@ -22,9 +23,9 @@ func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	// 创建监听通道
-	ch := make(chan string, 100)
-	serialService.AddListener(ch)
-	defer serialService.RemoveListener(ch)
+	global := services.GetGlobalListener()
+	ch, cancel := global.Subscribe(100)
+	defer cancel()
 
 	// 发送实时消息
 	for {

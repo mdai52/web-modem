@@ -4,37 +4,24 @@ const $$$ = document.createElement.bind(document);
 
 class ModemManager {
     constructor() {
-        this.isBusy = false;
-        this.apiBase = '/api/v1';
-        this.wsUrl = `ws://${location.host}/ws`;
         this.ws = null;
+        this.isBusy = false;
+        this.templates = {};
         this.init();
     }
 
     init() {
-        this.refreshPorts();
+        this.createTemplate();
         this.setupWebSocket();
+        this.refreshPorts();
         this.setupSMSCounter();
-    }
-
-    // ---------- WebSocket ----------
-
-    setupWebSocket() {
-        this.ws = new WebSocket(this.wsUrl);
-        this.ws.onopen = () => this.addLog('WebSocket 连接已建立');
-        this.ws.onmessage = (event) => this.addLog('收到: ' + event.data);
-        this.ws.onerror = (error) => this.addLog('WebSocket 错误: ' + error);
-        this.ws.onclose = () => {
-            this.addLog('WebSocket 连接已断开');
-            setTimeout(() => this.setupWebSocket(), 5000);
-        };
     }
 
     // ---------- API ----------
 
     async apiRequest(endpoint, method = 'GET', body = null) {
         if (this.isBusy) {
-            this.showError('当前有请求正在进行，请稍候');
+            this.logger('当前有请求正在进行，请稍候', 'error');
             throw new Error('请求被阻断');
         }
 
@@ -42,17 +29,30 @@ class ModemManager {
         const options = { method, headers: { 'Content-Type': 'application/json' } };
         if (body) options.body = JSON.stringify(body);
         try {
-            const response = await fetch(this.apiBase + endpoint, options);
+            const response = await fetch('/api/v1' + endpoint, options);
             const data = await response.json();
             if (!response.ok) {
                 const msg = data.error || '请求失败';
-                this.showError(msg);
+                this.logger(msg, 'error');
                 throw new Error(msg);
             }
             return data;
         } finally {
             this.toggleButtons(false);
         }
+    }
+
+    // ---------- WebSocket ----------
+
+    setupWebSocket() {
+        this.ws = new WebSocket(`ws://${location.host}/ws`);
+        this.ws.onopen = () => this.logger('WebSocket 已连接');
+        this.ws.onmessage = (event) => this.logger(event.data);
+        this.ws.onerror = (error) => this.logger('WebSocket 错误: ' + error);
+        this.ws.onclose = () => {
+            this.logger('WebSocket 已断开');
+            setTimeout(() => this.setupWebSocket(), 5000);
+        };
     }
 
     // ---------- Port & actions ----------
@@ -64,7 +64,7 @@ class ModemManager {
             const current = select.value;
             select.innerHTML = '<option value="">-- 选择串口 --</option>';
             ports.forEach(port => {
-                const option = document.createElement('option');
+                const option = $$$('option');
                 option.value = port.path;
                 option.textContent = port.name + (port.connected ? ' ✅' : '');
                 select.appendChild(option);
@@ -76,7 +76,7 @@ class ModemManager {
                 const connected = ports.find(p => p.connected);
                 if (connected) select.value = connected.path;
             }
-            this.addLog('已刷新串口列表');
+            this.logger('已刷新串口列表');
         } catch (error) {
             console.error('刷新串口失败:', error);
         }
@@ -87,7 +87,7 @@ class ModemManager {
         if (!port) return;
         const command = $('#atCommand').value.trim();
         if (!command) {
-            this.showError('请输入 AT 命令');
+            this.logger('请输入 AT 命令', 'error');
             return;
         }
         try {
@@ -126,10 +126,10 @@ class ModemManager {
         const port = this.getSelectedPort();
         if (!port) return;
         try {
-            this.addLog('正在读取短信列表（PDU 模式）...');
+            this.logger('正在读取短信列表（PDU 模式）...');
             const smsList = await this.apiRequest(`/modem/sms/list?port=${encodeURIComponent(port)}`);
             this.displaySMSList(smsList);
-            this.addLog(`已读取 ${smsList.length} 条短信`);
+            this.logger(`已读取 ${smsList.length} 条短信`);
         } catch (error) {
             console.error('获取短信列表失败:', error);
         }
@@ -141,13 +141,13 @@ class ModemManager {
         const number = $('#smsNumber').value.trim();
         const message = $('#smsMessage').value.trim();
         if (!number || !message) {
-            this.showError('请输入号码和短信内容');
+            this.logger('请输入号码和短信内容', 'error');
             return;
         }
         try {
-            this.addLog('正在发送短信（支持中文和长短信）...');
+            this.logger('正在发送短信（支持中文和长短信）...');
             await this.apiRequest('/modem/sms/send', 'POST', { port, number, message });
-            this.showSuccess('短信发送成功！');
+            this.logger('短信发送成功！', 'success');
             $('#smsNumber').value = '';
             $('#smsMessage').value = '';
             this.updateSMSCounter();
@@ -194,6 +194,12 @@ class ModemManager {
 
     // ---------- UI helpers ----------
 
+    escapeHtml(text) {
+        const div = $$$('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
     toggleButtons(disabled) {
         this.isBusy = disabled;
         $$('button').forEach(btn => btn.disabled = disabled);
@@ -204,7 +210,7 @@ class ModemManager {
     getSelectedPort() {
         const port = $('#portSelect').value;
         if (!port) {
-            this.showError('请选择可用串口');
+            this.logger('请选择可用串口', 'error');
             return null;
         }
         return port;
@@ -216,10 +222,11 @@ class ModemManager {
         terminal.scrollTop = terminal.scrollHeight;
     }
 
-    addLog(text) {
+    logger(text, type = 'info') {
         const log = $('#log');
         const timestamp = new Date().toLocaleTimeString();
-        log.innerHTML += `[${timestamp}] ${this.escapeHtml(text)}\n`;
+        const prefix = type === 'error' ? '❌ 错误: ' : type === 'success' ? '✅ 成功: ' : '';
+        log.innerHTML += `[${timestamp}] ${prefix}${this.escapeHtml(text)}\n`;
         log.scrollTop = log.scrollHeight;
     }
 
@@ -227,59 +234,36 @@ class ModemManager {
         $('#log').innerHTML = '';
     }
 
-    showError(message) {
-        this.addLog('❌ 错误: ' + message);
-        alert('错误: ' + message);
-    }
-
-    showSuccess(message) {
-        this.addLog('✅ 成功: ' + message);
-    }
-
-    escapeHtml(text) {
-        const div = $$$('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
     // ---------- Render ----------
+
+    createTemplate() {
+        this.templates.modemInfo = $('#modemInfo')?.innerHTML || '';
+        this.templates.signalInfo = $('#signalInfo')?.innerHTML || '';
+        this.templates.smsItem = $('#smsList')?.innerHTML || '';
+    }
+
+    renderTemplate(id, data) {
+        const template = this.templates[id] || '';
+        return template.replace(/\{([\w.]+)\}/g, (_, path) => {
+            const value = path.split('.').reduce((obj, k) => (obj && obj[k] !== undefined ? obj[k] : undefined), data);
+            const safe = value === undefined || value === null || value === '' ? '-' : value;
+            return this.escapeHtml(String(safe));
+        });
+    }
 
     displayModemInfo(info) {
         const container = $('#modemInfo');
-        container.innerHTML = `
-            <div class="info-item"><span class="info-label">串口:</span><span class="info-value">${info.port || '-'}</span></div>
-            <div class="info-item"><span class="info-label">制造商:</span><span class="info-value">${info.manufacturer || '-'}</span></div>
-            <div class="info-item"><span class="info-label">型号:</span><span class="info-value">${info.model || '-'}</span></div>
-            <div class="info-item"><span class="info-label">IMEI:</span><span class="info-value">${info.imei || '-'}</span></div>
-            <div class="info-item"><span class="info-label">手机号:</span><span class="info-value">${info.phoneNumber || '-'}</span></div>
-            <div class="info-item"><span class="info-label">运营商:</span><span class="info-value">${info.operator || '-'}</span></div>
-        `;
+        container.innerHTML = this.renderTemplate('modemInfo', { info });
     }
 
     displaySignalInfo(signal) {
-        const container = $('#modemInfo');
-        container.innerHTML = `
-            <div class="info-item"><span class="info-label">信号强度 (RSSI):</span><span class="info-value">${signal.rssi}</span></div>
-            <div class="info-item"><span class="info-label">信号质量:</span><span class="info-value">${signal.quality}</span></div>
-            <div class="info-item"><span class="info-label">dBm:</span><span class="info-value">${signal.dbm}</span></div>
-        `;
+        const container = $('#signalInfo');
+        container.innerHTML = this.renderTemplate('signalInfo', { signal });
     }
 
     displaySMSList(smsList) {
         const container = $('#smsList');
-        if (!smsList || smsList.length === 0) {
-            container.innerHTML = '<p>暂无短信</p>';
-            return;
-        }
-        container.innerHTML = smsList.map(sms => `
-            <div class="sms-item">
-                <div class="sms-header">
-                    <span class="sms-number">📱 ${this.escapeHtml(sms.number)}</span>
-                    <span class="sms-time">🕐 ${this.escapeHtml(sms.time)}</span>
-                </div>
-                <div class="sms-message">${this.escapeHtml(sms.message)}</div>
-            </div>
-        `).join('');
+        container.innerHTML = smsList.map(sms => this.renderTemplate('smsItem', { sms })).join('');
     }
 }
 

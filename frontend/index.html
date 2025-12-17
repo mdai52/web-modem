@@ -28,7 +28,37 @@
                         <button onclick="app.getSignalStrength()">信号强度</button>
                     </div>
                 </div>
-                <div id="modemInfo" class="info-display"></div>
+                <div id="modemInfo">
+                    <div class="info-item">
+                        <span class="info-label">串口:</span><span class="info-value">{info.port}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">制造商:</span><span class="info-value">{info.manufacturer}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">型号:</span><span class="info-value">{info.model}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">IMEI:</span><span class="info-value">{info.imei}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">手机号:</span><span class="info-value">{info.phoneNumber}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">运营商:</span><span class="info-value">{info.operator}</span>
+                    </div>
+                </div>
+                <div id="signalInfo">
+                    <div class="info-item">
+                        <span class="info-label">信号强度 (RSSI):</span><span class="info-value">{signal.rssi}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">信号质量:</span><span class="info-value">{signal.quality}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">dBm:</span><span class="info-value">{signal.dbm}</span>
+                    </div>
+                </div>
             </section>
 
             <!-- 接收短信 -->
@@ -39,7 +69,15 @@
                         <button onclick="app.listSMS()">刷新短信</button>
                     </div>
                 </div>
-                <div id="smsList" class="sms-list"></div>
+                <div id="smsList" class="sms-list">
+                    <div class="sms-item">
+                        <div class="sms-header">
+                            <span class="sms-number">📱 {sms.number}</span>
+                            <span class="sms-time">🕐 {sms.time}</span>
+                        </div>
+                        <div class="sms-message">{sms.message}</div>
+                    </div>
+                </div>
             </section>
 
             <!-- 发送短信 -->
