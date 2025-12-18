@@ -27,15 +27,11 @@ func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	ch, cancel := global.Subscribe(100)
 	defer cancel()
 
-	// 发送实时消息
-	for {
-		select {
-		case message := <-ch:
-			err := conn.WriteMessage(websocket.TextMessage, []byte(message))
-			if err != nil {
-				log.Println("WebSocket write error:", err)
-				return
-			}
+	for message := range ch {
+		err := conn.WriteMessage(websocket.TextMessage, []byte(message))
+		if err != nil {
+			log.Println("WebSocket write error:", err)
+			return
 		}
 	}
 }

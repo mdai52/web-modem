@@ -39,25 +39,7 @@ type SendSMSRequest struct {
 }
 
 type SerialPort struct {
-	Name string `json:"name"`
-	Path string `json:"path"`
-	Connected bool `json:"connected"`
-}
-
-// 长短信片段
-type SMSPart struct {
-	RefNum    byte
-	Total     int
-	PartNum   int
-	Message   string
-	Timestamp string
-}
-
-// 长短信缓存
-type LongSMS struct {
-	RefNum    byte
-	Total     int
-	Parts     map[int]string
-	Sender    string
-	Timestamp string
+	Name      string `json:"name"`
+	Path      string `json:"path"`
+	Connected bool   `json:"connected"`
 }

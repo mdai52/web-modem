@@ -29,15 +29,7 @@ func main() {
 	// 静态文件服务
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("frontend")))
 
-	// CORS 配置
-	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"*"},
-		AllowCredentials: true,
-	})
-
-	handler := c.Handler(router)
+	handler := cors.AllowAll().Handler(router)
 
 	port := os.Getenv("PORT")
 	if port == "" {

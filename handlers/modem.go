@@ -13,7 +13,7 @@ var serialManager = services.GetSerialManager()
 // 列出可用串口
 func ListModems(w http.ResponseWriter, r *http.Request) {
 	// 扫描并一次性连接可用串口
-	ports, err := serialManager.ScanAndConnectAll(115200)
+	ports, err := serialManager.Scan(115200)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -30,14 +30,8 @@ func SendATCommand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if cmd.Port == "" {
-		respondError(w, http.StatusBadRequest, "port is required")
-		return
-	}
-
-	svc, err := serialManager.GetService(cmd.Port)
-	if err != nil {
-		respondError(w, http.StatusBadRequest, err.Error())
+	svc, ok := getServiceFromPortParam(w, cmd.Port)
+	if !ok {
 		return
 	}
 
@@ -52,14 +46,8 @@ func SendATCommand(w http.ResponseWriter, r *http.Request) {
 
 // 获取 Modem 信息
 func GetModemInfo(w http.ResponseWriter, r *http.Request) {
-	p := r.URL.Query().Get("port")
-	if p == "" {
-		respondError(w, http.StatusBadRequest, "port is required")
-		return
-	}
-	svc, err := serialManager.GetService(p)
-	if err != nil {
-		respondError(w, http.StatusBadRequest, err.Error())
+	svc, ok := requireQueryService(w, r)
+	if !ok {
 		return
 	}
 
@@ -74,14 +62,8 @@ func GetModemInfo(w http.ResponseWriter, r *http.Request) {
 
 // 获取信号强度
 func GetSignalStrength(w http.ResponseWriter, r *http.Request) {
-	p := r.URL.Query().Get("port")
-	if p == "" {
-		respondError(w, http.StatusBadRequest, "port is required")
-		return
-	}
-	svc, err := serialManager.GetService(p)
-	if err != nil {
-		respondError(w, http.StatusBadRequest, err.Error())
+	svc, ok := requireQueryService(w, r)
+	if !ok {
 		return
 	}
 
@@ -96,14 +78,8 @@ func GetSignalStrength(w http.ResponseWriter, r *http.Request) {
 
 // 列出短信
 func ListSMS(w http.ResponseWriter, r *http.Request) {
-	p := r.URL.Query().Get("port")
-	if p == "" {
-		respondError(w, http.StatusBadRequest, "port is required")
-		return
-	}
-	svc, err := serialManager.GetService(p)
-	if err != nil {
-		respondError(w, http.StatusBadRequest, err.Error())
+	svc, ok := requireQueryService(w, r)
+	if !ok {
 		return
 	}
 
@@ -124,18 +100,12 @@ func SendSMS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Port == "" {
-		respondError(w, http.StatusBadRequest, "port is required")
-		return
-	}
-	svc, err := serialManager.GetService(req.Port)
-	if err != nil {
-		respondError(w, http.StatusBadRequest, err.Error())
+	svc, ok := getServiceFromPortParam(w, req.Port)
+	if !ok {
 		return
 	}
 
-	err = svc.SendSMS(req.Number, req.Message)
-	if err != nil {
+	if err := svc.SendSMS(req.Number, req.Message); err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -153,4 +123,23 @@ func respondJSON(w http.ResponseWriter, status int, data interface{}) {
 // 辅助函数：返回错误
 func respondError(w http.ResponseWriter, status int, message string) {
 	respondJSON(w, status, map[string]string{"error": message})
+}
+
+func requireQueryService(w http.ResponseWriter, r *http.Request) (*services.SerialService, bool) {
+	return getServiceFromPortParam(w, r.URL.Query().Get("port"))
+}
+
+func getServiceFromPortParam(w http.ResponseWriter, port string) (*services.SerialService, bool) {
+	if port == "" {
+		respondError(w, http.StatusBadRequest, "port is required")
+		return nil, false
+	}
+
+	svc, err := serialManager.GetService(port)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, err.Error())
+		return nil, false
+	}
+
+	return svc, true
 }

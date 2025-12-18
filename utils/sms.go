@@ -106,10 +106,6 @@ func DecodePDUPhone(pduPhone string) string {
 }
 
 // PDU 时间戳编码
-func EncodePDUTimestamp() string {
-	// 简化版本，返回空字符串，让 modem 自动处理
-	return ""
-}
 
 // 解码 PDU 时间戳
 func DecodePDUTimestamp(pduTime string) string {

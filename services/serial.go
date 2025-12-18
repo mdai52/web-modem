@@ -17,26 +17,22 @@ import (
 
 // SerialService 封装单个串口的读写与监听。
 type SerialService struct {
-	name       string
-	port       *serial.Port
-	lock       *sync.Mutex
+	name string
+	port *serial.Port
+	mu   *sync.Mutex
 }
 
 func newSerialService(name string, port *serial.Port) *SerialService {
-	return &SerialService{
-		name:       name,
-		port:       port,
-		lock:       &sync.Mutex{},
-	}
+	return &SerialService{name, port, &sync.Mutex{}}
 }
 
 // readLoop 持续读取串口输出并广播。
 func (s *SerialService) readLoop() {
 	buf := make([]byte, 128)
 	for {
-		s.lock.Lock()
+		s.mu.Lock()
 		n, err := s.port.Read(buf)
-		s.lock.Unlock()
+		s.mu.Unlock()
 		if err != nil {
 			time.Sleep(150 * time.Millisecond)
 			continue
@@ -53,14 +49,14 @@ func (s *SerialService) SendATCommand(command string) (string, error) {
 }
 
 // sendRawCommand 发送原始命令并读取响应。
-func (s *SerialService) sendRawCommand(command, append string) (string, error) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+func (s *SerialService) sendRawCommand(command, suffix string) (string, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	// 清理历史未读数据，避免旧数据干扰本次响应
 	_ = s.port.Flush()
 
-	_, err := s.port.Write([]byte(command + append))
+	_, err := s.port.Write([]byte(command + suffix))
 	if err != nil {
 		return "", err
 	}
@@ -129,14 +125,39 @@ func (s *SerialService) GetModemInfo() (*models.ModemInfo, error) {
 	if resp, err := s.SendATCommand("AT+CIMI"); err == nil {
 		info.IMSI = extractValue(resp)
 	}
-	if resp, err := s.SendATCommand("AT+CNUM"); err == nil {
-		info.PhoneNumber = extractPhoneNumber(resp)
+	if resp, err := s.GetPhoneNumber(); err == nil {
+		info.PhoneNumber = resp
 	}
 	if resp, err := s.SendATCommand("AT+COPS?"); err == nil {
 		info.Operator = extractOperator(resp)
 	}
 
 	return info, nil
+}                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+
+func (s *SerialService) GetPhoneNumber() (string, error) {
+	resp, err := s.SendATCommand("AT+CNUM")
+	if err != nil {
+		return "", err
+	}
+
+	re := regexp.MustCompile(`\+CNUM:\s*"[^"]*",\s*"([^"]+)"`)
+	matches := re.FindStringSubmatch(resp)
+	if len(matches) > 1 {
+		return matches[1], nil
+	}
+
+	for _, line := range strings.Split(resp, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "AT") || line == "OK" {
+			continue
+		}
+		if strings.ContainsAny(line, "0123456789") {
+			return line, nil
+		}
+	}
+
+	return "", errors.New("phone number not found")
 }
 
 // GetSignalStrength 查询信号强度。
@@ -179,7 +200,7 @@ func (s *SerialService) parsePDUSMSList(response string) []models.SMS {
 
 	for i := 0; i < len(lines); i++ {
 		line := strings.TrimSpace(lines[i])
-		if strings.HasPrefix(line, "+CMGL:  ") {
+		if strings.HasPrefix(line, "+CMGL:") {
 			re := regexp.MustCompile(`\+CMGL:\s*(\d+),(\d+),.*,(\d+)`)
 			matches := re.FindStringSubmatch(line)
 
@@ -254,25 +275,5 @@ func extractOperator(response string) string {
 	if len(matches) > 1 {
 		return matches[1]
 	}
-	return ""
-}
-
-func extractPhoneNumber(response string) string {
-	re := regexp.MustCompile(`\+CNUM:\s*"[^"]*",\s*"([^"]+)"`)
-	matches := re.FindStringSubmatch(response)
-	if len(matches) > 1 {
-		return matches[1]
-	}
-
-	for _, line := range strings.Split(response, "\n") {
-		line = strings.TrimSpace(line)
-		if line == "" || strings.HasPrefix(line, "AT") || line == "OK" {
-			continue
-		}
-		if strings.ContainsAny(line, "0123456789") {
-			return line
-		}
-	}
-
 	return ""
 }

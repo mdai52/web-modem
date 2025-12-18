@@ -32,8 +32,8 @@ func GetSerialManager() *SerialManager {
 	return managerInstance
 }
 
-// ScanAndConnectAll 扫描并连接支持 AT 的 modem，返回已连接端口列表。
-func (m *SerialManager) ScanAndConnectAll(baudRate int) ([]models.SerialPort, error) {
+// Scan 扫描并连接支持 AT 的 modem，返回已连接端口列表。
+func (m *SerialManager) Scan(baudRate int) ([]models.SerialPort, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
