@@ -150,6 +150,8 @@ main {
 
 .sms-list {
     margin-top: 16px;
+    max-height: 400px;
+    overflow-y: auto;
 }
 
 .sms-item {
