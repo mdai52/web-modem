@@ -13,7 +13,7 @@ var upgrader = websocket.Upgrader{
 }
 
 // HandleWebSocket 将 HTTP 连接升级为 WebSocket 连接
-// 并将串口事件流式传输到客户端。
+// 并将串口事件流式传输到客户端
 func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {

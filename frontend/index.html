@@ -12,10 +12,10 @@
     <div class="container">
         <header>
             <h1>📱 Modem 管理</h1>
-            <select id="portSelect" onchange="app.loadPortRelatedInfo()">
+            <select id="modemSelect" onchange="app.loadModemRelatedInfo()">
                 <option value="">-- 选择串口 --</option>
             </select>
-            <button id="refreshBtn" onclick="app.refreshPorts()">刷新</button>
+            <button id="refreshBtn" onclick="app.refreshModems()">刷新</button>
         </header>
 
         <main>
@@ -30,7 +30,7 @@
                 </div>
                 <div id="modemInfo">
                     <div class="info-item">
-                        <span class="info-label">串口:</span><span class="info-value">{info.port}</span>
+                        <span class="info-label">串口:</span><span class="info-value">{info.name}</span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">制造商:</span><span class="info-value">{info.manufacturer}</span>
@@ -42,7 +42,7 @@
                         <span class="info-label">IMEI:</span><span class="info-value">{info.imei}</span>
                     </div>
                     <div class="info-item">
-                        <span class="info-label">手机号:</span><span class="info-value">{info.phoneNumber}</span>
+                        <span class="info-label">手机号:</span><span class="info-value">{info.phone}</span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">运营商:</span><span class="info-value">{info.operator}</span>
@@ -53,7 +53,7 @@
                         <span class="info-label">信号强度 (RSSI):</span><span class="info-value">{signal.rssi}</span>
                     </div>
                     <div class="info-item">
-                        <span class="info-label">信号质量:</span><span class="info-value">{signal.quality}</span>
+                        <span class="info-label">误码率:</span><span class="info-value">{signal.ber}</span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">dBm:</span><span class="info-value">{signal.dbm}</span>
@@ -72,11 +72,11 @@
                 <div id="smsList" class="sms-list">
                     <div class="sms-item">
                         <div class="sms-header">
-                            <span class="sms-number">📱 {sms.number}</span>
+                            <span class="sms-number">📱 {sms.phoneNumber}</span>
                             <span class="sms-time">🕐 {sms.time}</span>
                             <button class="delete-btn" onclick="app.deleteSMS({sms.index})">删除</button>
                         </div>
-                        <div class="sms-message">{sms.message}</div>
+                        <div class="sms-message">{sms.text}</div>
                     </div>
                 </div>
             </section>

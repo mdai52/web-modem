@@ -7,8 +7,8 @@ import (
 )
 
 type WebhookMessage struct {
-	Type    string      `json:"type"` // "sms" or "call"
-	Payload interface{} `json:"payload"`
+	Type    string `json:"type"` // "sms" or "call"
+	Payload any    `json:"payload"`
 }
 
 func SendWebhook(url string, msg WebhookMessage) error {

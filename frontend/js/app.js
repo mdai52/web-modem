@@ -7,7 +7,7 @@ class ModemManager {
         this.ws = null;
         this.isBusy = false;
         this.templates = {};
-        this.port = null;
+        this.name = null;
         this.init();
     }
 
@@ -15,7 +15,7 @@ class ModemManager {
         this.createTemplate();
         this.setupWebSocket();
         this.setupSMSCounter();
-        this.refreshPorts();
+        this.refreshModems();
     }
 
     // ---------- API 接口 ----------
@@ -58,36 +58,36 @@ class ModemManager {
 
     // ---------- 端口与操作 ----------
 
-    async refreshPorts() {
+    async refreshModems() {
         try {
-            const ports = await this.apiRequest('/modems');
-            const select = $('#portSelect');
+            const modems = await this.apiRequest('/modems');
+            const select = $('#modemSelect');
             const current = select.value;
             select.innerHTML = '<option value="">-- 选择串口 --</option>';
-            ports.forEach(port => {
+            modems.forEach(modem => {
                 const option = $$$('option');
-                option.value = port.path;
-                option.textContent = port.name + (port.connected ? ' ✅' : '');
+                option.value = modem.name;
+                option.textContent = modem.name + (modem.connected ? ' (已连接)' : '(已断开)');
                 select.appendChild(option);
             });
             // 优先保持当前选择，否则选第一个已连接
-            if (current && ports.find(p => p.path === current && p.connected)) {
+            if (current && modems.find(p => p.name === current && p.connected)) {
                 select.value = current;
             } else {
-                const connected = ports.find(p => p.connected);
-                if (connected) select.value = connected.path;
+                const connected = modems.find(p => p.connected);
+                if (connected) select.value = connected.name;
             }
             // 端口刷新后自动加载一次相关信息
-            this.loadPortRelatedInfo();
+            this.loadModemRelatedInfo();
             this.logger('已刷新串口列表');
         } catch (error) {
             console.error('刷新串口失败:', error);
         }
     }
 
-    async loadPortRelatedInfo() {
-        this.port = $('#portSelect').value;
-        if (!this.port) {
+    async loadModemRelatedInfo() {
+        this.name = $('#modemSelect').value;
+        if (!this.name) {
             this.logger('请选择可用串口', 'error');
             return null;
         }
@@ -102,15 +102,15 @@ class ModemManager {
     }
 
     async sendATCommand() {
-        const command = $('#atCommand').value.trim();
-        if (!command) {
+        const cmd = $('#atCommand').value.trim();
+        if (!cmd) {
             this.logger('请输入 AT 命令', 'error');
             return;
         }
 
         try {
-            const result = await this.apiRequest('/modem/at', 'POST', { port: this.port, command });
-            this.addToTerminal(`> ${command}`);
+            const result = await this.apiRequest('/modem/at', 'POST', { name: this.name, command: cmd});
+            this.addToTerminal(`> ${cmd}`);
             this.addToTerminal(result.response || '');
             $('#atCommand').value = '';
         } catch (error) {
@@ -119,18 +119,18 @@ class ModemManager {
     }
 
     async getModemInfo() {
-        const info = await this.apiRequest(`/modem/info?port=${encodeURIComponent(this.port)}`);
+        const info = await this.apiRequest(`/modem/info?name=${encodeURIComponent(this.name)}`);
         this.displayModemInfo(info);
     }
 
     async getSignalStrength() {
-        const signal = await this.apiRequest(`/modem/signal?port=${encodeURIComponent(this.port)}`);
+        const signal = await this.apiRequest(`/modem/signal?name=${encodeURIComponent(this.name)}`);
         this.displaySignalInfo(signal);
     }
 
     async listSMS() {
         this.logger('正在读取短信列表 ...');
-        const smsList = await this.apiRequest(`/modem/sms/list?port=${encodeURIComponent(this.port)}`);
+        const smsList = await this.apiRequest(`/modem/sms/list?name=${encodeURIComponent(this.name)}`);
         this.displaySMSList(smsList);
         this.logger(`已读取 ${smsList.length} 条短信`);
     }
@@ -145,7 +145,7 @@ class ModemManager {
 
         try {
             this.logger('正在发送短信 ...');
-            await this.apiRequest('/modem/sms/send', 'POST', { port: this.port, number, message });
+            await this.apiRequest('/modem/sms/send', 'POST', { name: this.name, number, message });
             this.logger('短信发送成功！', 'success');
             $('#smsNumber').value = '';
             $('#smsMessage').value = '';
@@ -162,7 +162,7 @@ class ModemManager {
 
         try {
             this.logger(`正在删除短信 (Index: ${index})...`);
-            await this.apiRequest('/modem/sms/delete', 'POST', { port: this.port, index });
+            await this.apiRequest('/modem/sms/delete', 'POST', { name: this.name, index });
             this.logger('短信删除成功！', 'success');
             this.listSMS(); // 刷新列表
         } catch (error) {
