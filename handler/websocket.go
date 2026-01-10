@@ -1,10 +1,10 @@
-package handlers
+package handler
 
 import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
-	"github.com/rehiy/web-modem/services"
+	"github.com/rehiy/web-modem/service"
 )
 
 var upgrader = websocket.Upgrader{
@@ -21,7 +21,7 @@ func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	// 读取消息并推送到客户端
-	for msg := range services.EventChannel {
+	for msg := range service.ModemEvent {
 		if err := conn.WriteMessage(websocket.TextMessage, []byte(msg)); err != nil {
 			return
 		}

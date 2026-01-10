@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/gorilla/mux"
-	"github.com/rehiy/web-modem/handlers"
+	"github.com/rehiy/web-modem/handler"
 )
 
 const (
@@ -20,18 +20,18 @@ func main() {
 	api := r.PathPrefix(apiPrefix).Subrouter()
 
 	// 调制解调器路由
-	api.HandleFunc("/modems", handlers.ListModems).Methods("GET")
-	api.HandleFunc("/modem/at", handlers.SendATCommand).Methods("POST")
-	api.HandleFunc("/modem/info", handlers.GetModemInfo).Methods("GET")
-	api.HandleFunc("/modem/signal", handlers.GetSignalStrength).Methods("GET")
+	api.HandleFunc("/modems", handler.ListModems).Methods("GET")
+	api.HandleFunc("/modem/at", handler.SendATCommand).Methods("POST")
+	api.HandleFunc("/modem/info", handler.GetModemInfo).Methods("GET")
+	api.HandleFunc("/modem/signal", handler.GetSignalStrength).Methods("GET")
 
 	// 短信读写路由
-	api.HandleFunc("/modem/sms/list", handlers.ListSMS).Methods("GET")
-	api.HandleFunc("/modem/sms/send", handlers.SendSMS).Methods("POST")
-	api.HandleFunc("/modem/sms/delete", handlers.DeleteSMS).Methods("POST")
+	api.HandleFunc("/modem/sms/list", handler.ListSMS).Methods("GET")
+	api.HandleFunc("/modem/sms/send", handler.SendSMS).Methods("POST")
+	api.HandleFunc("/modem/sms/delete", handler.DeleteSMS).Methods("POST")
 
 	// WebSocket
-	r.HandleFunc("/ws", handlers.HandleWebSocket)
+	r.HandleFunc("/ws", handler.HandleWebSocket)
 
 	// 静态文件服务
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("webview")))

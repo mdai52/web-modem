@@ -1,4 +1,4 @@
-package services
+package service
 
 import (
 	"fmt"
@@ -16,12 +16,26 @@ import (
 )
 
 var (
-	managerOnce     sync.Once
-	managerInstance *ModemManager
-
-	// 用于推送串口事件到客户端
-	EventChannel = make(chan string, 100)
+	modemOnce     sync.Once
+	modemInstance *ModemService
+	ModemEvent    = make(chan string, 100)
 )
+
+// ModemService 管理多个串口连接
+type ModemService struct {
+	pool map[string]*at.Device
+	mu   sync.Mutex
+}
+
+// GetModemService 返回单例实例
+func GetModemService() *ModemService {
+	modemOnce.Do(func() {
+		modemInstance = &ModemService{
+			pool: map[string]*at.Device{},
+		}
+	})
+	return modemInstance
+}
 
 // ModemInfo 端口信息
 type ModemInfo struct {
@@ -29,24 +43,8 @@ type ModemInfo struct {
 	Connected bool   `json:"connected"`
 }
 
-// ModemManager 管理多个串口连接
-type ModemManager struct {
-	pool map[string]*at.Device
-	mu   sync.Mutex
-}
-
-// GetModemManager 返回单例实例
-func GetModemManager() *ModemManager {
-	managerOnce.Do(func() {
-		managerInstance = &ModemManager{
-			pool: map[string]*at.Device{},
-		}
-	})
-	return managerInstance
-}
-
 // GetModems 返回已连接的端口信息
-func (m *ModemManager) GetModems() []ModemInfo {
+func (m *ModemService) GetModems() []ModemInfo {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -61,7 +59,7 @@ func (m *ModemManager) GetModems() []ModemInfo {
 }
 
 // ScanModems 扫描可用的调制解调器并连接到它们
-func (m *ModemManager) ScanModems(devs ...string) {
+func (m *ModemService) ScanModems(devs ...string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -98,7 +96,7 @@ func (m *ModemManager) ScanModems(devs ...string) {
 }
 
 // GetConnect 返回给定端口名称的 AT 接口
-func (m *ModemManager) GetConnect(u string) (*at.Device, error) {
+func (m *ModemService) GetConnect(u string) (*at.Device, error) {
 	n := path.Base(u)
 
 	m.mu.Lock()
@@ -112,7 +110,7 @@ func (m *ModemManager) GetConnect(u string) (*at.Device, error) {
 }
 
 // makeConnect 添加新的 AT 接口
-func (m *ModemManager) makeConnect(u string) error {
+func (m *ModemService) makeConnect(u string) error {
 	n := path.Base(u)
 
 	// 创建日志函数
@@ -130,9 +128,9 @@ func (m *ModemManager) makeConnect(u string) error {
 		delete(m.pool, n)
 	}
 
-	// 创建事件处理函数，写入 EventChannel
+	// 创建事件处理函数，写入 ModemEvent
 	hf := func(l string, p map[int]string) {
-		EventChannel <- fmt.Sprintf("[%s] urc:%s %v", n, l, p)
+		ModemEvent <- fmt.Sprintf("[%s] urc:%s %v", n, l, p)
 	}
 
 	// 打开串口

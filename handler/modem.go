@@ -1,21 +1,21 @@
-package handlers
+package handler
 
 import (
 	"encoding/json"
 	"net/http"
 	"strings"
 
-	"github.com/rehiy/web-modem/services"
+	"github.com/rehiy/web-modem/service"
 )
 
 type H map[string]any
 
-var serialManager = services.GetModemManager()
+var modemService = service.GetModemService()
 
 // ListModems 返回可用调制解调器的列表
 func ListModems(w http.ResponseWriter, r *http.Request) {
-	serialManager.ScanModems()
-	modems := serialManager.GetModems()
+	modemService.ScanModems()
+	modems := modemService.GetModems()
 	respondJSON(w, http.StatusOK, modems)
 }
 
@@ -30,7 +30,7 @@ func SendATCommand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	conn, err := serialManager.GetConnect(req.Name)
+	conn, err := modemService.GetConnect(req.Name)
 	if conn == nil {
 		respondJSON(w, http.StatusBadRequest, H{"error": err.Error()})
 		return
@@ -57,7 +57,7 @@ func GetModemInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	conn, err := serialManager.GetConnect(name)
+	conn, err := modemService.GetConnect(name)
 	if conn == nil {
 		respondJSON(w, http.StatusBadRequest, H{"error": err.Error()})
 		return
@@ -101,7 +101,7 @@ func GetSignalStrength(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	conn, err := serialManager.GetConnect(name)
+	conn, err := modemService.GetConnect(name)
 	if conn == nil {
 		respondJSON(w, http.StatusBadRequest, H{"error": err.Error()})
 		return
@@ -150,7 +150,7 @@ func SendSMS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	conn, err := serialManager.GetConnect(req.Name)
+	conn, err := modemService.GetConnect(req.Name)
 	if conn == nil {
 		respondJSON(w, http.StatusBadRequest, H{"error": err.Error()})
 		return
@@ -171,7 +171,7 @@ func ListSMS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	conn, err := serialManager.GetConnect(name)
+	conn, err := modemService.GetConnect(name)
 	if conn == nil {
 		respondJSON(w, http.StatusBadRequest, H{"error": err.Error()})
 		return
@@ -197,7 +197,7 @@ func DeleteSMS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	conn, err := serialManager.GetConnect(req.Name)
+	conn, err := modemService.GetConnect(req.Name)
 	if conn == nil {
 		respondJSON(w, http.StatusBadRequest, H{"error": err.Error()})
 		return
