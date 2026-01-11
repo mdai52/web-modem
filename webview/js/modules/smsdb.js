@@ -81,9 +81,9 @@ export class SmsdbManager {
 
             const enabled = enabledCheckbox.checked;
             await apiRequest('/smsdb/settings', 'PUT', { smsdb_enabled: enabled });
-            app.logPanel.success(`数据库存储短信已${enabled ? '启用' : '禁用'}`);
+            app.logger.success(`数据库存储短信已${enabled ? '启用' : '禁用'}`);
         } catch (error) {
-            app.logPanel.error('更新设置失败');
+            app.logger.error('更新设置失败');
         }
     }
 
@@ -194,10 +194,10 @@ export class SmsdbManager {
 
         try {
             await apiRequest('/smsdb/delete', 'POST', { ids: [id] });
-            app.logPanel.success('短信删除成功');
+            app.logger.success('短信删除成功');
             this.listSmsdb();
         } catch (error) {
-            app.logPanel.error('删除短信失败: ' + error);
+            app.logger.error('删除短信失败: ' + error);
         }
     }
 
@@ -214,11 +214,11 @@ export class SmsdbManager {
         try {
             const ids = Array.from(this.selectedSmsdb);
             await apiRequest('/smsdb/delete', 'POST', { ids });
-            this.logPanel.success(`成功删除 ${ids.length} 条短信`);
+            app.logger.success(`成功删除 ${ids.length} 条短信`);
             this.selectedSmsdb.clear();
             this.listSmsdb();
         } catch (error) {
-            this.logPanel.error('批量删除短信失败: ' + error);
+            app.logger.error('批量删除短信失败: ' + error);
         }
     }
 

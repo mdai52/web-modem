@@ -24,10 +24,10 @@ window.app = {};
 async function init() {
     try {
         // 初始化全局日志面板
-        app.logPanel = new LogPanel();
+        app.logger = new LogPanel();
         
         // 初始化 WebSocket 服务
-        app.webSocketService = new WebSocketService(app.logPanel);
+        app.webSocketService = new WebSocketService(app.logger);
         app.webSocketService.connect(`ws://${location.host}/ws/modem`);
 
         // 初始化各个功能管理器
@@ -47,7 +47,7 @@ async function init() {
         app.webhookManager.loadWebhookSettings();
         
         // 记录应用启动日志
-        app.logPanel.success('Modem 管理系统已启动');
+        app.logger.success('Modem 管理系统已启动');
     } catch (error) {
         console.error('应用初始化失败:', error);
     }

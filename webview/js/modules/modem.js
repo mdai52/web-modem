@@ -84,9 +84,9 @@ export class ModemManager {
 
             // 端口刷新后自动加载一次相关信息
             this.loadModemRelatedInfo();
-            this.logPanel.info('已刷新串口列表');
+            app.logger.info('已刷新串口列表');
         } catch (error) {
-            this.logPanel.error('刷新串口失败: ' + error);
+            app.logger.error('刷新串口失败: ' + error);
         }
     }
 
@@ -98,7 +98,7 @@ export class ModemManager {
     async loadModemRelatedInfo() {
         this.name = $('#modemSelect').value;
         if (!this.name) {
-            this.logPanel.error('请选择可用串口');
+            app.logger.error('请选择可用串口');
             return null;
         }
 
@@ -107,7 +107,7 @@ export class ModemManager {
             await this.getModemInfo();
             await this.listSMS();
         } catch (error) {
-            this.logPanel.error('串口相关信息加载失败');
+            app.logger.error('串口相关信息加载失败');
         }
     }
 
@@ -118,7 +118,7 @@ export class ModemManager {
     async sendATCommand() {
         const cmd = $('#atCommand').value.trim();
         if (!cmd) {
-            this.logPanel.error('请输入 AT 命令');
+            app.logger.error('请输入 AT 命令');
             return;
         }
 
@@ -157,11 +157,11 @@ export class ModemManager {
      * 获取当前Modem中的短信列表
      */
     async listSMS() {
-        this.logPanel.info('正在读取短信列表 ...');
+        app.logger.info('正在读取短信列表 ...');
         const queryString = buildQueryString({ name: this.name });
         const smsList = await apiRequest(`/modem/sms/list?${queryString}`);
         this.displaySMSList(smsList);
-        this.logPanel.info(`已读取 ${smsList.length} 条短信`);
+        app.logger.info(`已读取 ${smsList.length} 条短信`);
     }
 
     /**
@@ -172,19 +172,19 @@ export class ModemManager {
         const number = $('#smsNumber').value.trim();
         const message = $('#smsMessage').value.trim();
         if (!number || !message) {
-            this.logPanel.error('请输入号码和短信内容');
+            app.logger.error('请输入号码和短信内容');
             return;
         }
 
         try {
-            this.logPanel.info('正在发送短信 ...');
+            app.logger.info('正在发送短信 ...');
             await apiRequest('/modem/sms/send', 'POST', { name: this.name, number, message });
-            this.logPanel.success('短信发送成功！');
+            app.logger.success('短信发送成功！');
             $('#smsNumber').value = '';
             $('#smsMessage').value = '';
             this.updateSMSCounter();
         } catch (error) {
-            this.logPanel.error('发送短信失败: ' + error);
+            app.logger.error('发送短信失败: ' + error);
         }
     }
 
@@ -195,7 +195,7 @@ export class ModemManager {
      */
     async deleteSMS(indices) {
         if (!this.name) {
-            this.logPanel.error('请先选择串口');
+            app.logger.error('请先选择串口');
             return;
         }
 
@@ -206,13 +206,13 @@ export class ModemManager {
         }
 
         try {
-            this.logPanel.info('正在删除短信...');
+            app.logger.info('正在删除短信...');
             await apiRequest('/modem/sms/delete', 'POST', { name: this.name, indices: indicesArray });
-            this.logPanel.success('短信删除成功！');
+            app.logger.success('短信删除成功！');
             // 删除成功后重新加载短信列表
             await this.listSMS();
         } catch (error) {
-            this.logPanel.error('删除短信失败: ' + error);
+            app.logger.error('删除短信失败: ' + error);
         }
     }
 
@@ -347,7 +347,7 @@ export class ModemManager {
         const logContainer = $('#log');
         if (logContainer) {
             logContainer.innerHTML = '';
-            app.logPanel.log('日志已清空');
+            app.logger.info('日志已清空');
         }
     }
 }

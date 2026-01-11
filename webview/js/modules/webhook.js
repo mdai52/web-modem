@@ -77,9 +77,9 @@ export class WebhookManager {
 
             const enabled = enabledCheckbox.checked;
             await apiRequest('/webhook/settings', 'PUT', { webhook_enabled: enabled });
-            this.logPanel.success(`Webhook功能已${enabled ? '启用' : '禁用'}`);
+            app.logger.success(`Webhook功能已${enabled ? '启用' : '禁用'}`);
         } catch (error) {
-            this.logPanel.error('更新设置失败');
+            app.logger.error('更新设置失败');
         }
     }
 
@@ -189,17 +189,17 @@ export class WebhookManager {
                 // 更新
                 const queryString = buildQueryString({ id: this.currentWebhookId });
                 await apiRequest(`/webhook/update?${queryString}`, 'PUT', webhookData);
-            this.logPanel.success('Webhook更新成功');
+            app.logger.success('Webhook更新成功');
         } else {
             // 创建
             await apiRequest('/webhook', 'POST', webhookData);
-            this.logPanel.success('Webhook创建成功');
+            app.logger.success('Webhook创建成功');
         }
 
         this.closeWebhookModal();
         this.listWebhooks();
     } catch (error) {
-        this.logPanel.error('保存Webhook失败: ' + error);
+        app.logger.error('保存Webhook失败: ' + error);
     }
     }
 
@@ -211,10 +211,10 @@ export class WebhookManager {
         try {
             const queryString = buildQueryString({ id });
             await apiRequest(`/webhook/delete?${queryString}`, 'DELETE');
-            this.logPanel.success('Webhook删除成功');
+            app.logger.success('Webhook删除成功');
             this.listWebhooks();
         } catch (error) {
-            this.logPanel.error('删除Webhook失败: ' + error);
+            app.logger.error('删除Webhook失败: ' + error);
         }
     }
 
@@ -248,9 +248,9 @@ export class WebhookManager {
 
         try {
             await apiRequest('/webhook/test', 'POST', testWebhook);
-            this.logPanel.success('Webhook测试请求已发送');
+            app.logger.success('Webhook测试请求已发送');
         } catch (error) {
-            this.logPanel.error('Webhook测试失败');
+            app.logger.error('Webhook测试失败');
         }
     }
 
@@ -258,9 +258,9 @@ export class WebhookManager {
         try {
             const queryString = buildQueryString({ id });
             await apiRequest(`/webhook/test?${queryString}`, 'POST');
-            this.logPanel.success('Webhook测试请求已发送');
+            app.logger.success('Webhook测试请求已发送');
         } catch (error) {
-            this.logPanel.error('Webhook测试失败');
+            app.logger.error('Webhook测试失败');
         }
     }
 }

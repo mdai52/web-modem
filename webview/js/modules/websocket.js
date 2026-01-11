@@ -32,7 +32,7 @@ export class WebSocketService {
             this.ws = new WebSocket(url);
             this.setupEventListeners();
         } catch (error) {
-            this.logPanel.error('WebSocket连接失败: ' + error);
+            app.logger.error('WebSocket连接失败: ' + error);
             this.scheduleReconnect(url);
         }
     }
@@ -42,7 +42,7 @@ export class WebSocketService {
      */
     setupEventListeners() {
         this.ws.onopen = () => {
-            this.logPanel.log('WebSocket 已连接');
+            app.logger.info('WebSocket 已连接');
             this.emit('connected');
         };
 
@@ -51,12 +51,12 @@ export class WebSocketService {
         };
 
         this.ws.onerror = (error) => {
-            this.logPanel.error('WebSocket 错误: ' + error);
+            app.logger.error('WebSocket 错误: ' + error);
             this.emit('error', error);
         };
 
         this.ws.onclose = () => {
-            this.logPanel.log('WebSocket 已断开');
+            app.logger.info('WebSocket 已断开');
             this.emit('disconnected');
             this.scheduleReconnect(this.ws.url);
         };
