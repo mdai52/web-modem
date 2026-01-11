@@ -48,8 +48,7 @@ func (s *SmsdbService) SyncSMSToDB(modemName string) (map[string]interface{}, er
 		}
 
 		// 保存到数据库
-		_, err := database.SaveIncomingSMS(modelSMS)
-		if err != nil {
+		if err := database.SaveSMS(modelSMS); err != nil {
 			log.Printf("[%s] Failed to save SMS to database: %v", modemName, err)
 			continue
 		}

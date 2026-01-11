@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -254,65 +253,22 @@ func (w *WebhookService) HandleIncomingSMS(smsData *models.SMS) error {
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				log.Printf("[SMS] Panic recovered in HandleIncomingSMS: %v", r)
+				log.Printf("[Webhook] Panic recovered: %v", r)
 			}
 		}()
 
 		// 保存到数据库
-		sms, err := database.SaveIncomingSMS(smsData)
-		if err != nil {
+		if err := database.SaveSMS(smsData); err != nil {
 			log.Printf("[SMS] Failed to save incoming SMS: %v", err)
 		}
 
 		// 如果webhook启用，触发webhook
 		if database.IsWebhookEnabled() {
-			var smsForWebhook *models.SMS
-			if sms != nil {
-				smsForWebhook = sms
-			} else {
-				// 如果保存失败或未启用，尝试查询
-				smsList, err := database.GetSMSByIDs(parseSMSIDs(smsData.SMSIDs))
-				if err != nil {
-					log.Printf("[SMS] Failed to get saved SMS: %v", err)
-					return
-				}
-				if len(smsList) > 0 {
-					smsForWebhook = &smsList[0]
-				} else {
-					// 没有保存的短信，使用传入的SMS对象
-					smsForWebhook = smsData
-				}
+			if err := w.TriggerWebhooks(smsData); err != nil {
+				log.Printf("[Webhook] Failed to trigger webhooks: %v", err)
 			}
-
-			// 异步触发webhook，不阻塞主流程
-			go func() {
-				defer func() {
-					if r := recover(); r != nil {
-						log.Printf("[Webhook] Panic recovered: %v", r)
-					}
-				}()
-				if err := w.TriggerWebhooks(smsForWebhook); err != nil {
-					log.Printf("[Webhook] Failed to trigger webhooks: %v", err)
-				}
-			}()
 		}
 	}()
 
 	return nil
-}
-
-// parseSMSIDs 将字符串形式的SMS IDs解析为int数组
-func parseSMSIDs(smsIDsStr string) []int {
-	if smsIDsStr == "" {
-		return []int{}
-	}
-
-	parts := strings.Split(smsIDsStr, ",")
-	var ids []int
-	for _, part := range parts {
-		if id, err := strconv.Atoi(strings.TrimSpace(part)); err == nil {
-			ids = append(ids, id)
-		}
-	}
-	return ids
 }

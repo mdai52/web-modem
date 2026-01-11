@@ -109,32 +109,6 @@ func IsSmsdbEnabled() bool {
 	return setting.Value == "true"
 }
 
-// SaveIncomingSMS 保存接收到的短信
-func SaveIncomingSMS(smsData *models.SMS) (*models.SMS, error) {
-	if !IsSmsdbEnabled() {
-		return nil, nil
-	}
-
-	smsData.Direction = "in"
-	if err := SaveSMS(smsData); err != nil {
-		return nil, err
-	}
-	return smsData, nil
-}
-
-// SaveOutgoingSMS 保存发送的短信
-func SaveOutgoingSMS(smsData *models.SMS) (*models.SMS, error) {
-	if !IsSmsdbEnabled() {
-		return nil, nil
-	}
-
-	smsData.Direction = "out"
-	if err := SaveSMS(smsData); err != nil {
-		return nil, err
-	}
-	return smsData, nil
-}
-
 // GetSettings 获取所有设置
 func GetSettings() (map[string]string, error) {
 	var settings []models.Setting
