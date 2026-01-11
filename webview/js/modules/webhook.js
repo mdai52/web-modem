@@ -1,0 +1,266 @@
+/* =========================================
+   Webhook 管理模块 (Webhook Management Module)
+   ========================================= */
+
+import { apiRequest, buildQueryString } from '../utils/api.js';
+import { $ } from '../utils/dom.js';
+import { UIRenderer } from '../utils/renderer.js';
+
+/**
+ * Webhook管理器类
+ * 负责管理Webhook配置，包括创建、编辑、删除、测试等功能
+ */
+export class WebhookManager {
+
+    /**
+     * 构造函数
+     * 初始化Webhook管理器的基本状态和属性
+     */
+    constructor() {
+        this.currentWebhookId = null;  // 当前编辑的 Webhook ID
+        this.renderer = new UIRenderer();
+        this.setupEventListeners();
+        this.extractTemplates();
+    }
+
+    /**
+     * 设置事件监听器
+     * 绑定Webhook相关的UI事件
+     */
+    setupEventListeners() {
+        // Webhook 相关事件
+        $('#createWebhookBtn')?.addEventListener('click', () => this.showCreateModal());
+        $('#refreshWebhooksBtn')?.addEventListener('click', () => this.listWebhooks());
+        $('#closeWebhookModalBtn')?.addEventListener('click', () => this.closeWebhookModal());
+        $('#saveWebhookBtn')?.addEventListener('click', () => this.saveWebhook());
+        $('#cancelWebhookBtn')?.addEventListener('click', () => this.closeWebhookModal());
+        $('#testWebhookBtn')?.addEventListener('click', () => this.testWebhook());
+        $('#webhookEnabled')?.addEventListener('change', () => this.updateWebhookSettings());
+    }
+
+    /**
+     * 提取模板
+     * 从DOM中提取Webhook相关的模板
+     */
+    extractTemplates() {
+        this.renderer.extractTemplate('webhookItem', 'webhookItem');
+    }
+
+    /* =========================================
+       Webhook管理 (Webhook Management)
+       ========================================= */
+
+    /**
+     * 加载Webhook设置
+     * 获取Webhook功能的启用状态
+     */
+    async loadWebhookSettings() {
+        try {
+            const settings = await apiRequest('/webhook/settings');
+            const enabledCheckbox = $('#webhookEnabled');
+            if (enabledCheckbox) {
+                enabledCheckbox.checked = settings.webhook_enabled === 'true' || settings.webhook_enabled === true;
+            }
+        } catch (error) {
+            console.error('加载Webhook设置失败:', error);
+        }
+    }
+
+    /**
+     * 更新Webhook设置
+     * 设置Webhook功能的启用状态
+     */
+    async updateWebhookSettings() {
+        try {
+            const enabledCheckbox = $('#webhookEnabled');
+            if (!enabledCheckbox) return;
+
+            const enabled = enabledCheckbox.checked;
+            await apiRequest('/webhook/settings', 'PUT', { webhook_enabled: enabled });
+            this.logPanel.success(`Webhook功能已${enabled ? '启用' : '禁用'}`);
+        } catch (error) {
+            this.logPanel.error('更新设置失败');
+        }
+    }
+
+    /**
+     * 列出Webhook配置
+     * 获取所有已配置的Webhook列表
+     */
+    async listWebhooks() {
+        try {
+            const webhooks = await apiRequest('/webhook/list');
+            this.displayWebhookList(webhooks);
+        } catch (error) {
+            console.error('加载Webhook列表失败:', error);
+        }
+    }
+
+    /**
+     * 显示Webhook列表
+     * 将Webhook数据渲染到表格中
+     * @param {Array} webhooks - Webhook列表数据
+     */
+    displayWebhookList(webhooks) {
+        const tbody = $('#webhookTableBody');
+        if (!tbody) return;
+
+        tbody.innerHTML = '';
+
+        if (!webhooks || webhooks.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">暂无 Webhook 配置</td></tr>';
+            return;
+        }
+
+        const fragment = document.createDocumentFragment();
+        webhooks.forEach(webhook => {
+            const rowHtml = this.renderer.render('webhookItem', {
+                id: webhook.id,
+                name: webhook.name,
+                url: webhook.url,
+                enabled: webhook.enabled ? '✅ 启用' : '❌ 禁用',
+                created_at: new Date(webhook.created_at).toLocaleString()
+            });
+            const tempDiv = document.createElement('tbody');
+            tempDiv.innerHTML = rowHtml;
+            while (tempDiv.firstChild) {
+                fragment.appendChild(tempDiv.firstChild);
+            }
+        });
+        tbody.appendChild(fragment);
+    }
+
+    showCreateModal() {
+        this.currentWebhookId = null;
+        $('#webhookModalTitle').textContent = '创建Webhook';
+        $('#webhookName').value = '';
+        $('#webhookURL').value = '';
+        $('#webhookTemplate').value = '{}';
+        $('#webhookEnabledCheckbox').checked = true;
+        $('#webhookModal').classList.add('active');
+    }
+
+    async editWebhook(id) {
+        try {
+            const queryString = buildQueryString({ id });
+            const webhook = await apiRequest(`/webhook/get?${queryString}`);
+            this.currentWebhookId = id;
+            $('#webhookModalTitle').textContent = '编辑Webhook';
+            $('#webhookName').value = webhook.name;
+            $('#webhookURL').value = webhook.url;
+            $('#webhookTemplate').value = webhook.template;
+            $('#webhookEnabledCheckbox').checked = webhook.enabled;
+            $('#webhookModal').classList.add('active');
+        } catch (error) {
+            console.error('加载Webhook详情失败:', error);
+        }
+    }
+
+    closeWebhookModal() {
+        $('#webhookModal').classList.remove('active');
+        this.currentWebhookId = null;
+    }
+
+    async saveWebhook() {
+        const name = $('#webhookName').value.trim();
+        const url = $('#webhookURL').value.trim();
+        const template = $('#webhookTemplate').value.trim();
+        const enabled = $('#webhookEnabledCheckbox').checked;
+
+        if (!name || !url) {
+            alert('请填写名称和URL');
+            return;
+        }
+
+        // 验证模板是否为有效的JSON
+        if (template && template !== '{}') {
+            try {
+                JSON.parse(template);
+            } catch (e) {
+                alert('模板必须是有效的JSON格式');
+                return;
+            }
+        }
+
+        try {
+            const webhookData = { name, url, template, enabled };
+
+            if (this.currentWebhookId) {
+                // 更新
+                const queryString = buildQueryString({ id: this.currentWebhookId });
+                await apiRequest(`/webhook/update?${queryString}`, 'PUT', webhookData);
+            this.logPanel.success('Webhook更新成功');
+        } else {
+            // 创建
+            await apiRequest('/webhook', 'POST', webhookData);
+            this.logPanel.success('Webhook创建成功');
+        }
+
+        this.closeWebhookModal();
+        this.listWebhooks();
+    } catch (error) {
+        this.logPanel.error('保存Webhook失败: ' + error);
+    }
+    }
+
+    async deleteWebhook(id) {
+        if (!confirm('确定要删除这个Webhook吗？')) {
+            return;
+        }
+
+        try {
+            const queryString = buildQueryString({ id });
+            await apiRequest(`/webhook/delete?${queryString}`, 'DELETE');
+            this.logPanel.success('Webhook删除成功');
+            this.listWebhooks();
+        } catch (error) {
+            this.logPanel.error('删除Webhook失败: ' + error);
+        }
+    }
+
+    async testWebhook() {
+        const url = $('#webhookURL').value.trim();
+        if (!url) {
+            alert('请先填写URL');
+            return;
+        }
+
+        const name = $('#webhookName').value.trim() || '测试';
+        const template = $('#webhookTemplate').value.trim() || '{}';
+
+        try {
+            // 如果模板不是有效的JSON，使用默认值
+            if (template !== '{}') {
+                JSON.parse(template);
+            }
+        } catch (e) {
+            alert('模板必须是有效的JSON格式');
+            return;
+        }
+
+        // 创建一个临时的webhook对象用于测试
+        const testWebhook = {
+            name: name,
+            url: url,
+            template: template,
+            enabled: true
+        };
+
+        try {
+            await apiRequest('/webhook/test', 'POST', testWebhook);
+            this.logPanel.success('Webhook测试请求已发送');
+        } catch (error) {
+            this.logPanel.error('Webhook测试失败');
+        }
+    }
+
+    async testExistingWebhook(id) {
+        try {
+            const queryString = buildQueryString({ id });
+            await apiRequest(`/webhook/test?${queryString}`, 'POST');
+            this.logPanel.success('Webhook测试请求已发送');
+        } catch (error) {
+            this.logPanel.error('Webhook测试失败');
+        }
+    }
+}

@@ -1,0 +1,132 @@
+package handler
+
+import (
+	"encoding/json"
+	"net/http"
+	"strconv"
+	"time"
+
+	"github.com/rehiy/web-modem/database"
+	"github.com/rehiy/web-modem/models"
+)
+
+// SmsdbHandler 短信存储处理器
+type SmsdbHandler struct{}
+
+// NewSmsdbHandler 创建新的短信存储处理器
+func NewSmsdbHandler() *SmsdbHandler {
+	return &SmsdbHandler{}
+}
+
+// List 获取数据库中的短信列表
+func (h *SmsdbHandler) List(w http.ResponseWriter, r *http.Request) {
+	filter := &models.SMSFilter{}
+
+	// 解析查询参数
+	if direction := r.URL.Query().Get("direction"); direction != "" {
+		filter.Direction = direction
+	}
+
+	if sendNumber := r.URL.Query().Get("send_number"); sendNumber != "" {
+		filter.SendNumber = sendNumber
+	}
+
+	if startTime := r.URL.Query().Get("start_time"); startTime != "" {
+		if t, err := time.Parse(time.RFC3339, startTime); err == nil {
+			filter.StartTime = t
+		}
+	}
+
+	if endTime := r.URL.Query().Get("end_time"); endTime != "" {
+		if t, err := time.Parse(time.RFC3339, endTime); err == nil {
+			filter.EndTime = t
+		}
+	}
+
+	// 分页参数
+	filter.Limit = 50 // 默认每页50条
+	if limit := r.URL.Query().Get("limit"); limit != "" {
+		if l, err := strconv.Atoi(limit); err == nil && l > 0 && l <= 200 {
+			filter.Limit = l
+		}
+	}
+
+	if offset := r.URL.Query().Get("offset"); offset != "" {
+		if o, err := strconv.Atoi(offset); err == nil && o >= 0 {
+			filter.Offset = o
+		}
+	}
+
+	smsList, total, err := database.GetSMSList(filter)
+	if err != nil {
+		respondJSON(w, http.StatusInternalServerError, H{"error": err.Error()})
+		return
+	}
+
+	respondJSON(w, http.StatusOK, H{
+		"data":   smsList,
+		"total":  total,
+		"limit":  filter.Limit,
+		"offset": filter.Offset,
+	})
+}
+
+// Delete 删除数据库中的短信
+func (h *SmsdbHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		IDs []int `json:"ids"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondJSON(w, http.StatusBadRequest, H{"error": err.Error()})
+		return
+	}
+
+	if len(req.IDs) == 0 {
+		respondJSON(w, http.StatusBadRequest, H{"error": "no IDs provided"})
+		return
+	}
+
+	if err := database.BatchDeleteSMS(req.IDs); err != nil {
+		respondJSON(w, http.StatusInternalServerError, H{"error": err.Error()})
+		return
+	}
+
+	respondJSON(w, http.StatusOK, H{
+		"status": "deleted",
+		"count":  len(req.IDs),
+	})
+}
+
+// GetSettings 获取短信存储设置
+func (h *SmsdbHandler) GetSettings(w http.ResponseWriter, r *http.Request) {
+	settings, err := database.GetSettings()
+	if err != nil {
+		respondJSON(w, http.StatusInternalServerError, H{"error": err.Error()})
+		return
+	}
+
+	respondJSON(w, http.StatusOK, settings)
+}
+
+// UpdateSettings 更新短信存储设置
+func (h *SmsdbHandler) UpdateSettings(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		SmsdbEnabled bool `json:"smsdb_enabled"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondJSON(w, http.StatusBadRequest, H{"error": err.Error()})
+		return
+	}
+
+	if err := database.SetSmsdbEnabled(req.SmsdbEnabled); err != nil {
+		respondJSON(w, http.StatusInternalServerError, H{"error": err.Error()})
+		return
+	}
+
+	respondJSON(w, http.StatusOK, H{
+		"status":        "updated",
+		"smsdb_enabled": req.SmsdbEnabled,
+	})
+}

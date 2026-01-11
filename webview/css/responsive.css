@@ -1,0 +1,57 @@
+/* =========================================
+   响应式样式 (Responsive Styles)
+   ========================================= */
+
+/**
+ * 信息网格响应式布局
+ */
+
+/* 响应式优化：在中等屏幕下显示2列，大屏幕显示3列 */
+@media (min-width: 768px) {
+    .info-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .info-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (min-width: 1400px) {
+    .info-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/**
+ * 短信列表响应式布局
+ */
+
+/* 小屏幕优化 - 保持单行，缩略显示 */
+@media (max-width: 640px) {
+    .sms-info {
+        gap: 0.25rem;
+    }
+    
+    .sms-number {
+        font-size: 0.8rem;
+        max-width: 100px;
+    }
+    
+    .sms-time {
+        font-size: 0.7rem;
+        max-width: 50px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .sms-header .delete-btn {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+        min-width: auto;
+        flex-shrink: 0;
+        margin-left: 0.5rem;
+    }
+}

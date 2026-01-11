@@ -7,6 +7,7 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -21,9 +22,17 @@ var (
 	ModemEvent    = make(chan string, 100)
 )
 
+// ModemInfo 端口信息
+type ModemInfo struct {
+	Name        string `json:"name"`
+	PhoneNumber string `json:"phoneNumber"`
+	Connected   bool   `json:"connected"`
+	*at.Device  `json:"-"`
+}
+
 // ModemService 管理多个串口连接
 type ModemService struct {
-	pool map[string]*at.Device
+	pool map[string]*ModemInfo
 	mu   sync.Mutex
 }
 
@@ -31,29 +40,20 @@ type ModemService struct {
 func GetModemService() *ModemService {
 	modemOnce.Do(func() {
 		modemInstance = &ModemService{
-			pool: map[string]*at.Device{},
+			pool: map[string]*ModemInfo{},
 		}
 	})
 	return modemInstance
 }
 
-// ModemInfo 端口信息
-type ModemInfo struct {
-	Name      string `json:"name"`
-	Connected bool   `json:"connected"`
-}
-
 // GetModems 返回已连接的端口信息
-func (m *ModemService) GetModems() []ModemInfo {
+func (m *ModemService) GetModems() []*ModemInfo {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	var modems []ModemInfo
-	for name, conn := range m.pool {
-		modems = append(modems, ModemInfo{
-			Name:      name,
-			Connected: conn.IsOpen(),
-		})
+	var modems []*ModemInfo
+	for _, model := range m.pool {
+		modems = append(modems, model)
 	}
 	return modems
 }
@@ -96,17 +96,54 @@ func (m *ModemService) ScanModems(devs ...string) {
 }
 
 // GetConnect 返回给定端口名称的 AT 接口
-func (m *ModemService) GetConnect(u string) (*at.Device, error) {
+func (m *ModemService) GetConnect(u string) (*ModemInfo, error) {
 	n := path.Base(u)
 
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	conn, ok := m.pool[n]
+	modem, ok := m.pool[n]
 	if !ok {
 		return nil, fmt.Errorf("[%s] not found", n)
 	}
-	return conn, nil
+	return modem, nil
+}
+
+// handleIncomingSMS 处理指定端口的新接收短信
+func (m *ModemService) handleIncomingSMS(portName string, smsIndex int, webhookService *WebhookService) {
+	conn, err := m.GetConnect(portName)
+	if err != nil {
+		log.Printf("[%s] Failed to get connection for incoming SMS: %v", portName, err)
+		return
+	}
+
+	// 获取短信列表（只获取新短信）
+	smsList, err := conn.ListSMSPdu(4)
+	if err != nil {
+		log.Printf("[%s] Failed to list SMS: %v", portName, err)
+		return
+	}
+
+	// 处理每条短信
+	for _, sms := range smsList {
+		hasNewSMS := false
+		for _, idx := range sms.Indices {
+			if idx == smsIndex {
+				hasNewSMS = true
+				break
+			}
+		}
+		if !hasNewSMS {
+			continue
+		}
+		go func(smsData at.SMS) {
+			modelSMS := atSMSToModelSMS(smsData, conn.PhoneNumber)
+			if err := webhookService.HandleIncomingSMS(modelSMS); err != nil {
+				log.Printf("[%s] Failed to handle incoming SMS: %v", portName, err)
+			}
+			log.Printf("[%s] New SMS from %s: %s", portName, smsData.PhoneNumber, smsData.Text)
+		}(sms)
+	}
 }
 
 // makeConnect 添加新的 AT 接口
@@ -128,9 +165,18 @@ func (m *ModemService) makeConnect(u string) error {
 		delete(m.pool, n)
 	}
 
-	// 创建事件处理函数，写入 ModemEvent
+	// 创建事件处理函数，写入 ModemEvent 并处理短信
 	hf := func(l string, p map[int]string) {
 		ModemEvent <- fmt.Sprintf("[%s] urc:%s %v", n, l, p)
+		// 处理收到的短信通知
+		if l == "+CMTI" && len(p) > 0 {
+			if indexStr, ok := p[1]; ok {
+				if index, err := strconv.Atoi(indexStr); err == nil {
+					w := NewWebhookService()
+					m.handleIncomingSMS(n, index, w)
+				}
+			}
+		}
 	}
 
 	// 打开串口
@@ -158,7 +204,21 @@ func (m *ModemService) makeConnect(u string) error {
 	conn.SetSMSMode(0) // PDU 模式
 
 	// 添加到连接池
-	m.pool[n] = conn
-	pf("connected")
+	modem := &ModemInfo{
+		Name:        n,
+		PhoneNumber: "unkown",
+		Connected:   true,
+		Device:      conn,
+	}
+
+	// 获取手机号，用于接收号码
+	if phoneNum, _, err := modem.GetPhoneNumber(); err == nil {
+		modem.PhoneNumber = phoneNum
+	}
+
+	// 获取并显示手机号
+	pf("connected, phone number: %s", modem.PhoneNumber)
+	m.pool[n] = modem
+
 	return nil
 }

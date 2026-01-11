@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gorilla/websocket"
 	"github.com/rehiy/web-modem/service"
 )
 
@@ -21,15 +20,15 @@ func NewModemHandler() *ModemHandler {
 	}
 }
 
-// ListModems 返回可用调制解调器的列表
-func (h *ModemHandler) ListModems(w http.ResponseWriter, r *http.Request) {
+// List 返回可用调制解调器的列表
+func (h *ModemHandler) List(w http.ResponseWriter, r *http.Request) {
 	h.ms.ScanModems()
 	modems := h.ms.GetModems()
 	respondJSON(w, http.StatusOK, modems)
 }
 
-// SendATCommand 向调制解调器发送原始 AT 命令
-func (h *ModemHandler) SendATCommand(w http.ResponseWriter, r *http.Request) {
+// Command 向调制解调器发送原始 AT 命令
+func (h *ModemHandler) Command(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Name    string `json:"name"`
 		Command string `json:"command"`
@@ -58,8 +57,8 @@ func (h *ModemHandler) SendATCommand(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// GetModemInfo 获取有关调制解调器的详细信息
-func (h *ModemHandler) GetModemInfo(w http.ResponseWriter, r *http.Request) {
+// BasicInfo 获取调制解调器基本信息
+func (h *ModemHandler) BasicInfo(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get("name")
 	if name == "" {
 		respondJSON(w, http.StatusBadRequest, H{"error": "name is empty"})
@@ -102,8 +101,8 @@ func (h *ModemHandler) GetModemInfo(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, info)
 }
 
-// GetSignalStrength 获取当前信号强度
-func (h *ModemHandler) GetSignalStrength(w http.ResponseWriter, r *http.Request) {
+// SignalStrength 获取当前信号强度
+func (h *ModemHandler) SignalStrength(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get("name")
 	if name == "" {
 		respondJSON(w, http.StatusBadRequest, H{"error": "name is empty"})
@@ -216,22 +215,5 @@ func (h *ModemHandler) DeleteSMS(w http.ResponseWriter, r *http.Request) {
 		respondJSON(w, http.StatusInternalServerError, H{"error": err.Error()})
 	} else {
 		respondJSON(w, http.StatusOK, H{"status": "deleted", "count": len(req.Indices)})
-	}
-}
-
-// HandleWebSocket 将 HTTP 连接升级为 WebSocket 连接
-// 并将串口事件流式传输到客户端
-func (h *ModemHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		return
-	}
-	defer conn.Close()
-
-	// 读取消息并推送到客户端
-	for msg := range service.ModemEvent {
-		if err := conn.WriteMessage(websocket.TextMessage, []byte(msg)); err != nil {
-			return
-		}
 	}
 }

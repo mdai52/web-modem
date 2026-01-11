@@ -5,128 +5,326 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Modem 管理系统</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/main.css">
 </head>
 
 <body>
     <div class="container">
-        <header>
-            <h1>📱 Modem 管理</h1>
-            <select id="modemSelect" onchange="app.loadModemRelatedInfo()">
-                <option value="">-- 选择串口 --</option>
-            </select>
-            <button id="refreshBtn" onclick="app.refreshModems()">刷新</button>
+        <!-- Header -->
+        <header class="header">
+            <div class="header-title">
+                <h1>📱 Modem 管理系统</h1>
+            </div>
+            <div class="header-controls">
+                <nav class="nav-tabs">
+                    <button class="nav-tab active" data-tab="main">主界面</button>
+                    <button class="nav-tab" data-tab="smsdb">短信存储</button>
+                    <button class="nav-tab" data-tab="webhook">Webhook</button>
+                </nav>
+                <div class="control-group">
+                    <select class="select" id="modemSelect">
+                        <option value="">-- 选择串口 --</option>
+                    </select>
+                    <button class="btn btn-primary" id="refreshBtn">刷新设备</button>
+                </div>
+            </div>
         </header>
 
-        <main>
-            <!-- Modem 信息 -->
-            <section class="card">
-                <div class="card-header">
-                    <h2>Modem 信息</h2>
-                    <div class="card-actions">
-                        <button onclick="app.getModemInfo()">获取信息</button>
-                        <button onclick="app.getSignalStrength()">信号强度</button>
-                    </div>
-                </div>
-                <div id="modemInfo">
-                    <div class="info-item">
-                        <span class="info-label">串口:</span><span class="info-value">{info.name}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">制造商:</span><span class="info-value">{info.manufacturer}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">型号:</span><span class="info-value">{info.model}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">IMEI:</span><span class="info-value">{info.imei}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">手机号:</span><span class="info-value">{info.phone}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">运营商:</span><span class="info-value">{info.operator}</span>
-                    </div>
-                </div>
-                <div id="signalInfo">
-                    <div class="info-item">
-                        <span class="info-label">信号强度 (RSSI):</span><span class="info-value">{signal.rssi}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">误码率:</span><span class="info-value">{signal.ber}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">dBm:</span><span class="info-value">{signal.dbm}</span>
-                    </div>
-                </div>
-            </section>
+        <!-- Main Content -->
+        <main class="main-content">
 
-            <!-- 接收短信 -->
-            <section class="card">
-                <div class="card-header">
-                    <h2>接收短信</h2>
-                    <div class="card-actions">
-                        <button onclick="app.listSMS()">刷新短信</button>
-                    </div>
-                </div>
-                <div id="smsList" class="sms-list">
-                    <div class="sms-item">
-                        <div class="sms-header">
-                            <span class="sms-number">📱 {sms.phoneNumber}</span>
-                            <span class="sms-time">🕐 {sms.time}</span>
-                            <button class="delete-btn" onclick="app.deleteSMS({sms.indices})">删除</button>
+            <!-- 主界面 -->
+            <div id="mainTab" class="tab-content active">
+
+                <!-- Modem 信息 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Modem 信息</h2>
+                        <div>
+                            <button class="btn btn-secondary" id="getModemInfoBtn">获取信息</button>
+                            <button class="btn btn-secondary" id="getSignalStrengthBtn">信号强度</button>
                         </div>
-                        <div class="sms-message">{sms.text}</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="info-grid" id="modemInfo">
+                            <div class="info-item">
+                                <span class="info-label">串口</span>
+                                <span class="info-value">{info.name}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">制造商</span>
+                                <span class="info-value">{info.manufacturer}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">型号</span>
+                                <span class="info-value">{info.model}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">IMEI</span>
+                                <span class="info-value">{info.imei}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">手机号</span>
+                                <span class="info-value">{info.phone}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">运营商</span>
+                                <span class="info-value">{info.operator}</span>
+                            </div>
+                        </div>
+                        <div class="info-grid" id="signalInfo" style="margin-top: 1rem;">
+                            <div class="info-item">
+                                <span class="info-label">信号强度</span>
+                                <span class="info-value">{signal.rssi}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">误码率</span>
+                                <span class="info-value">{signal.ber}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">信号等级</span>
+                                <span class="info-value">{signal.level}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">dBm</span>
+                                <span class="info-value">{signal.dbm}</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </section>
 
-            <!-- 发送短信 -->
-            <section class="card">
-                <div class="card-header">
-                    <h2>发送短信</h2>
-                    <div class="card-actions">
-                        <button onclick="app.sendSMS()">发送短信</button>
+                <!-- 接收短信 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">接收短信</h2>
+                        <button class="btn btn-primary" id="listSMSBtn">刷新短信</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="scroll-container" id="smsList">
+                            <div class="sms-item">
+                                <div class="sms-header">
+                                    <span class="sms-number">📱 {sms.phoneNumber} &nbsp;</span>
+                                    <span class="sms-time">🕐 {sms.time} &nbsp;</span>
+                                    <span class="flex-auto"></span>
+                                    <button class="delete-btn" onclick="app.modemManager.deleteSMS({sms.indices})">删除</button>
+                                </div>
+                                <div class="sms-message">{sms.text}</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label>收件人号码:</label>
-                    <input type="text" id="smsNumber" placeholder="+86XXXXXXXXXXX" />
-                </div>
-                <div class="form-group">
-                    <label>短信内容:</label>
-                    <textarea id="smsMessage" rows="4" placeholder="输入短信内容... "></textarea>
-                </div>
-            </section>
 
-            <!-- AT 命令 -->
-            <section class="card">
-                <div class="card-header">
-                    <h2>AT 命令终端</h2>
-                    <div class="card-actions">
-                        <button onclick="app.sendATCommand()">发送指令</button>
+                <!-- 发送短信 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">发送短信</h2>
+                        <button class="btn btn-primary" id="sendSMSBtn">发送短信</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label">收件人号码</label>
+                            <input type="text" class="form-input" id="smsNumber" placeholder="+86XXXXXXXXXXX">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">短信内容</label>
+                            <textarea class="form-textarea" id="smsMessage" placeholder="输入短信内容..."></textarea>
+                        </div>
+                        <div id="smsCounter"></div>
                     </div>
                 </div>
-                <div class="form-group">
-                    <input type="text" id="atCommand" placeholder="输入 AT 命令 (例如:  AT+CGMI)" />
-                </div>
-                <div class="terminal" id="terminal"></div>
-            </section>
 
-            <!-- 实时日志 -->
-            <section class="card">
-                <div class="card-header">
-                    <h2>实时日志</h2>
-                    <div class="card-actions">
-                        <button onclick="app.clearLog()">清空日志</button>
+                <!-- 短信计数器模板 -->
+                <div id="smsCounterTemplate">
+                    <span>字符数: {length} / {maxChars}</span> | <span>短信条数: {parts}</span> | <span>编码: {encoding}</span>
+                </div>
+
+                <!-- AT 命令终端 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">AT 命令终端</h2>
+                        <button class="btn btn-primary" id="sendATCommandBtn">发送指令</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <input type="text" class="form-input" id="atCommand" placeholder="输入 AT 命令 (例如: AT+CGMI)">
+                        </div>
+                        <div class="terminal" id="terminal"></div>
                     </div>
                 </div>
-                <div class="log" id="log"></div>
-            </section>
+
+            </div>
+
+            <!-- 短信存储管理 -->
+            <div id="smsdbTab" class="tab-content">
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">短信存储管理</h2>
+                        <div>
+                            <button class="btn btn-secondary" id="refreshSmsdbBtn">刷新</button>
+                            <button class="btn btn-danger" id="deleteSelectedSmsdbBtn">删除</button>
+                            <button class="btn btn-success" id="exportSmsdbBtn">导出</button>
+                        </div>
+                    </div>
+
+                    <div class="card-body">
+                        <!-- 设置 -->
+                        <div class="filter-section">
+                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" id="smsdbEnabled">
+                                <span>启用数据库存储</span>
+                            </label>
+                        </div>
+
+                        <!-- 搜索过滤 -->
+                        <div class="filter-section">
+                            <input type="text" class="form-input" id="smsdbFilterSendNumber" placeholder="发送号码过滤">
+                            <select class="select" id="smsdbFilterDirection">
+                                <option value="">所有方向</option>
+                                <option value="in">接收</option>
+                                <option value="out">发送</option>
+                            </select>
+                            <input type="date" class="form-input" id="smsdbFilterStartDate" placeholder="开始日期">
+                            <input type="date" class="form-input" id="smsdbFilterEndDate" placeholder="结束日期">
+                            <button class="btn btn-primary" id="searchSmsdbBtn">搜索</button>
+                        </div>
+
+                        <!-- 短信列表 -->
+                        <div class="scroll-container">
+                            <table class="table" id="smsdbList">
+                                <thead>
+                                    <tr>
+                                        <th><input type="checkbox" id="smsdbCheckAll"></th>
+                                        <th>ID</th>
+                                        <th>方向</th>
+                                        <th>发送号码</th>
+                                        <th>接收号码</th>
+                                        <th>内容</th>
+                                        <th>接收时间</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="smsdbTableBody">
+                                    <!-- 短信存储列表项模板 -->
+                                    <tr id="smsdbItem">
+                                        <td><input type="checkbox" value="{id}" onchange="app.smsdbManager.toggleSmsdbSelection({id})"></td>
+                                        <td>{id}</td>
+                                        <td>{direction}</td>
+                                        <td>{send_number}</td>
+                                        <td>{receive_number}</td>
+                                        <td>{content}</td>
+                                        <td>{receive_time}</td>
+                                        <td>
+                                            <button class="delete-btn" onclick="app.smsdbManager.deleteSmsdb({id})">删除</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- 分页 -->
+                        <div class="pagination">
+                            <button class="btn btn-secondary" id="smsdbPrevPageBtn">上一页</button>
+                            <span class="pagination-info" id="smsdbPageInfo">第 1 页</span>
+                            <button class="btn btn-secondary" id="smsdbNextPageBtn">下一页</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Webhook配置 -->
+            <div id="webhookTab" class="tab-content">
+
+                <!-- Webhook列表 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Webhook 配置管理</h2>
+                        <div>
+                            <button class="btn btn-secondary" id="refreshWebhooksBtn">刷新列表</button>
+                        </div>
+                    </div>
+
+                    <div class="card-body">
+                        <!-- 设置 -->
+                        <div class="filter-section">
+                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" id="webhookEnabled">
+                                <span>启用 Webhook 功能</span>
+                            </label>
+                        </div>
+
+                        <!-- Webhook列表 -->
+                        <div class="scroll-container">
+                            <table class="table" id="webhookList">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>名称</th>
+                                        <th>URL</th>
+                                        <th>状态</th>
+                                        <th>创建时间</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="webhookTableBody">
+                                    <!-- Webhook列表项模板 -->
+                                    <tr id="webhookItem">
+                                        <td>{id}</td>
+                                        <td>{name}</td>
+                                        <td>{url}</td>
+                                        <td>{enabled}</td>
+                                        <td>{created_at}</td>
+                                        <td>
+                                            <button onclick="app.webhookManager.editWebhook({id})">编辑</button>
+                                            <button class="delete-btn" onclick="app.webhookManager.deleteWebhook({id})">删除</button>
+                                            <button onclick="app.webhookManager.testExistingWebhook({id})">测试</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Webhook编辑表单 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title" id="webhookFormTitle">创建 Webhook</h2>
+                        <div>
+                            <button class="btn btn-secondary" id="testWebhookBtn">测试</button>
+                            <button class="btn btn-primary" id="saveWebhookBtn">保存</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label">名称</label>
+                            <input type="text" class="form-input" id="webhookName" placeholder="Webhook名称">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">URL</label>
+                            <input type="text" class="form-input" id="webhookURL" placeholder="https://example.com/webhook">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">模板 (JSON)</label>
+                            <textarea class="form-textarea" id="webhookTemplate" rows="6" placeholder='{"event": "sms_received", "data": {"content": "{{content}}", "send_number": "{{send_number}}"}}'></textarea>
+                            <small style="color: var(--secondary); font-size: 0.75rem;">可用变量: {{content}}, {{send_number}}, {{receive_number}}, {{receive_time}}, {{sms_ids}}, {{direction}}</small>
+                        </div>
+                        <div class="form-group">
+                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" id="webhookEnabledCheckbox">
+                                <span>启用</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
         </main>
     </div>
 
-    <script src="js/app.js"></script>
+    <script type="module" src="js/main.js"></script>
 </body>
 
 </html>
