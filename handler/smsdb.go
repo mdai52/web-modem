@@ -8,14 +8,19 @@ import (
 
 	"github.com/rehiy/web-modem/database"
 	"github.com/rehiy/web-modem/models"
+	"github.com/rehiy/web-modem/service"
 )
 
 // SmsdbHandler 短信存储处理器
-type SmsdbHandler struct{}
+type SmsdbHandler struct {
+	smsdbService *service.SmsdbService
+}
 
 // NewSmsdbHandler 创建新的短信存储处理器
 func NewSmsdbHandler() *SmsdbHandler {
-	return &SmsdbHandler{}
+	return &SmsdbHandler{
+		smsdbService: service.NewSmsdbService(),
+	}
 }
 
 // List 获取数据库中的短信列表
@@ -129,4 +134,28 @@ func (h *SmsdbHandler) UpdateSettings(w http.ResponseWriter, r *http.Request) {
 		"status":        "updated",
 		"smsdb_enabled": req.SmsdbEnabled,
 	})
+}
+
+// SyncModemSMS 从指定Modem同步短信到数据库
+func (h *SmsdbHandler) SyncModemSMS(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Name string `json:"name"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondJSON(w, http.StatusBadRequest, H{"error": err.Error()})
+		return
+	}
+
+	if req.Name == "" {
+		respondJSON(w, http.StatusBadRequest, H{"error": "name is empty"})
+		return
+	}
+
+	result, err := h.smsdbService.SyncSMSToDB(req.Name)
+	if err != nil {
+		respondJSON(w, http.StatusInternalServerError, H{"error": err.Error()})
+		return
+	}
+
+	respondJSON(w, http.StatusOK, result)
 }

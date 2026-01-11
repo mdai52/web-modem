@@ -20,7 +20,7 @@ export class UIrender {
         this.extractTemplate('signalInfo', 'signalInfo');
         this.extractTemplate('smsList', 'smsItem');
         this.extractTemplate('smsdbList', 'smsdbItem');
-        this.extractTemplate('webhookItem', 'webhookItem');
+        this.extractTemplate('webhookList', 'webhookItem');
     }
 
     /**

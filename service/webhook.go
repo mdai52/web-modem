@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rehiy/modem/at"
 	"github.com/rehiy/web-modem/database"
 	"github.com/rehiy/web-modem/models"
 )
@@ -25,41 +24,6 @@ var (
 	webhookCacheMux  sync.RWMutex
 	cacheTTL         = 30 * time.Second // 缓存30秒
 )
-
-// atSMSToModelSMS 将 at.SMS 转换为 models.SMS
-func atSMSToModelSMS(smsData at.SMS, receiveNumber string) *models.SMS {
-	return &models.SMS{
-		Content:       smsData.Text,
-		SMSIDs:        database.IntArrayToString(smsData.Indices),
-		ReceiveTime:   parseSMSTime(smsData.Time),
-		ReceiveNumber: receiveNumber,
-		SendNumber:    smsData.PhoneNumber,
-		Direction:     "in",
-	}
-}
-
-// parseSMSTime 解析短信时间字符串
-func parseSMSTime(timeStr string) time.Time {
-	if timeStr == "" {
-		return time.Now()
-	}
-
-	// 尝试解析常见的短信时间格式
-	formats := []string{
-		"2006/01/02 15:04:05",
-		"2006-01-02 15:04:05",
-		"02/01/06 15:04:05",
-	}
-
-	for _, format := range formats {
-		if t, err := time.Parse(format, timeStr); err == nil {
-			return t
-		}
-	}
-
-	// 如果无法解析，返回当前时间
-	return time.Now()
-}
 
 // NewWebhookService 创建webhook服务
 func NewWebhookService() *WebhookService {
@@ -307,7 +271,7 @@ func (w *WebhookService) HandleIncomingSMS(smsData *models.SMS) error {
 				smsForWebhook = sms
 			} else {
 				// 如果保存失败或未启用，尝试查询
-				smsList, err := database.GetsmsdbBodyBySMSIDs(parseSMSIDs(smsData.SMSIDs))
+				smsList, err := database.GetSMSByIDs(parseSMSIDs(smsData.SMSIDs))
 				if err != nil {
 					log.Printf("[SMS] Failed to get saved SMS: %v", err)
 					return

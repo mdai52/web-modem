@@ -87,8 +87,8 @@ func BatchDeleteSMS(ids []int) error {
 	return nil
 }
 
-// GetsmsdbBodyBySMSIDs 根据短信模块的ID查询
-func GetsmsdbBodyBySMSIDs(smsIDs []int) ([]models.SMS, error) {
+// GetSMSByIDs 根据短信模块的ID查询
+func GetSMSByIDs(smsIDs []int) ([]models.SMS, error) {
 	if len(smsIDs) == 0 {
 		return []models.SMS{}, nil
 	}
@@ -181,4 +181,14 @@ func SetSmsdbEnabled(enabled bool) error {
 		return fmt.Errorf("failed to set smsdb_enabled: %w", result.Error)
 	}
 	return nil
+}
+
+// SMSExistsBySMSIDs 检查短信是否已存在于数据库（基于 SMSIDs）
+func SMSExistsBySMSIDs(smsIDs string) bool {
+	var count int64
+	result := db.Model(&models.SMS{}).Where("sms_ids = ?", smsIDs).Count(&count)
+	if result.Error != nil {
+		return false
+	}
+	return count > 0
 }

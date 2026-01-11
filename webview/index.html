@@ -157,6 +157,7 @@
                         <h2 class="card-title">短信存储管理</h2>
                         <div>
                             <button class="btn btn-secondary" id="refreshSmsdbBtn">刷新</button>
+                            <button class="btn btn-success" id="syncModemSMSBtn">同步</button>
                             <button class="btn btn-danger" id="deleteSelectedSmsdbBtn">删除</button>
                         </div>
                     </div>
@@ -185,7 +186,7 @@
 
                         <!-- 短信列表 -->
                         <div class="scroll-container">
-                            <table class="table smsdb-table" id="smsdbBody">
+                            <table class="table smsdb-table" id="smsdbTable">
                                 <thead>
                                     <tr>
                                         <th><input type="checkbox" id="smsdbCheckAll"></th>
@@ -250,7 +251,7 @@
 
                         <!-- Webhook列表 -->
                         <div class="scroll-container">
-                            <table class="table webhook-table" id="webhookList">
+                            <table class="table webhook-table" id="webhookTable">
                                 <thead>
                                     <tr>
                                         <th>ID</th>
@@ -261,7 +262,7 @@
                                         <th>操作</th>
                                     </tr>
                                 </thead>
-                                <tbody id="webhookTableBody">
+                                <tbody id="webhookList">
                                     <!-- Webhook列表项模板 -->
                                     <tr id="webhookItem">
                                         <td>{id}</td>

@@ -243,30 +243,21 @@ export class WebhookManager {
     async listWebhooks() {
         try {
             const webhooks = await apiRequest('/webhook/list');
-            this.displayWebhookList(webhooks);
+            const tbody = $('#webhookList');
+            if (!webhooks || webhooks.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">暂无 Webhook 配置</td></tr>';
+                return;
+            }
+            tbody.innerHTML = webhooks.map(webhook => app.render.render('webhookItem', {
+                id: webhook.id,
+                name: webhook.name,
+                url: webhook.url,
+                enabled: webhook.enabled ? '✅ 启用' : '❌ 禁用',
+                created_at: new Date(webhook.created_at).toLocaleString()
+            })).join('');
         } catch (error) {
             app.logger.error('加载 Webhook 列表失败: ' + error);
         }
-    }
-
-    /**
-     * 显示Webhook列表
-     * 将Webhook数据渲染到表格中
-     * @param {Array} webhooks - Webhook列表数据
-     */
-    displayWebhookList(webhooks) {
-        const tbody = $('#webhookTableBody');
-        if (!webhooks || webhooks.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">暂无 Webhook 配置</td></tr>';
-            return;
-        }
-        tbody.innerHTML = webhooks.map(webhook => app.render.render('webhookItem', {
-            id: webhook.id,
-            name: webhook.name,
-            url: webhook.url,
-            enabled: webhook.enabled ? '✅ 启用' : '❌ 禁用',
-            created_at: new Date(webhook.created_at).toLocaleString()
-        })).join('');
     }
 
     async editWebhook(id) {
@@ -319,6 +310,10 @@ export class WebhookManager {
         }
     }
 
+    /**
+     * 保存Webhook配置
+     * 创建或更新Webhook设置
+     */
     async saveWebhook() {
         const name = $('#webhookName').value.trim();
         const url = $('#webhookURL').value.trim();

@@ -28,6 +28,7 @@ export class SmsdbManager {
         $('#smsdbNextPageBtn')?.addEventListener('click', () => this.smsdbNextPage());
         $('#smsdbEnabled')?.addEventListener('change', () => this.updateSmsdbSettings());
         $('#smsdbCheckAll')?.addEventListener('change', () => this.toggleCheckAll());
+        $('#syncModemSMSBtn')?.addEventListener('click', () => this.syncCurrentModemSMS());
     }
 
     /* =========================================
@@ -105,7 +106,7 @@ export class SmsdbManager {
             const result = await apiRequest(`/smsdb/list?${queryString}`);
 
             this.total = result.total;
-            this.displaysmsdbBody(result.data);
+            this.displaySmsList(result.data);
             this.updateSmsdbPagination();
         } catch (error) {
             app.logger.error('加载短信存储失败: ' + error);
@@ -117,7 +118,7 @@ export class SmsdbManager {
      * 将短信数据渲染到表格中
      * @param {Array} smsList - 短信列表数据
      */
-    displaysmsdbBody(smsList) {
+    displaySmsList(smsList) {
         const tbody = $('#smsdbList');
         if (!tbody) return;
 
@@ -222,6 +223,44 @@ export class SmsdbManager {
 
         if (nextBtn) {
             nextBtn.disabled = this.page >= totalPages - 1;
+        }
+    }
+
+    /* =========================================
+       短信同步 (SMS Synchronization)
+       ========================================= */
+
+    /**
+     * 同步当前选中的Modem短信到数据库
+     */
+    async syncCurrentModemSMS() {
+        const modemName = $('#modemSelect').value;
+        if (!modemName) {
+            app.logger.error('请先选择串口');
+            return;
+        }
+        await this.syncModemSMS(modemName);
+    }
+
+    /**
+     * 同步指定Modem的短信到数据库
+     * @param {string} modemName - Modem名称
+     */
+    async syncModemSMS(modemName) {
+        try {
+            app.logger.info(`正在同步 ${modemName} 的短信...`);
+            const result = await apiRequest('/smsdb/sync', 'POST', { name: modemName });
+
+            if (result.error) {
+                app.logger.error(`[${result.modemName}] ${result.error}`);
+            } else if (result.newCount > 0) {
+                app.logger.success(`[${result.modemName}] 同步 ${result.newCount} 条新短信 (共 ${result.totalCount} 条)`);
+                await this.listSmsdb();
+            } else {
+                app.logger.info(`[${result.modemName}] 无新短信 (共 ${result.totalCount} 条)`);
+            }
+        } catch (error) {
+            app.logger.error(`同步 ${modemName} 短信失败: ` + error);
         }
     }
 }

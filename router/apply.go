@@ -50,6 +50,7 @@ func SmsdbRegister(r *mux.Router) {
 	r.HandleFunc("/smsdb/delete", dh.Delete).Methods("POST")
 	r.HandleFunc("/smsdb/settings", dh.GetSettings).Methods("GET")
 	r.HandleFunc("/smsdb/settings", dh.UpdateSettings).Methods("PUT")
+	r.HandleFunc("/smsdb/sync", dh.SyncModemSMS).Methods("POST")
 }
 
 func WebhookRegister(r *mux.Router) {
