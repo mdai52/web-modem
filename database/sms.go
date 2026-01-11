@@ -12,16 +12,16 @@ import (
 // SaveSMS 保存短信到数据库
 func SaveSMS(sms *models.SMS) error {
 	// 确保必要字段已设置
-	if sms.ReceiveTime.IsZero() {
-		sms.ReceiveTime = time.Now()
-	}
 	if sms.Direction == "" {
 		sms.Direction = "in"
 	}
+	if sms.ReceiveTime.IsZero() {
+		sms.ReceiveTime = time.Now()
+	}
 
-	result := db.Create(sms)
-	if result.Error != nil {
-		return fmt.Errorf("failed to save SMS: %w", result.Error)
+	err := db.Create(sms).Error
+	if err != nil {
+		return fmt.Errorf("failed to save SMS: %w", err)
 	}
 	return nil
 }
@@ -52,10 +52,7 @@ func GetSMSList(filter *models.SMSFilter) ([]models.SMS, int, error) {
 
 	// 查询列表
 	var smsList []models.SMS
-	err := query.Order("receive_time DESC").
-		Limit(filter.Limit).
-		Offset(filter.Offset).
-		Find(&smsList).Error
+	err := query.Order("receive_time DESC").Limit(filter.Limit).Offset(filter.Offset).Find(&smsList).Error
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to query SMS: %w", err)
 	}
@@ -65,11 +62,11 @@ func GetSMSList(filter *models.SMSFilter) ([]models.SMS, int, error) {
 
 // DeleteSMSByID 根据数据库ID删除短信
 func DeleteSMSByID(id int) error {
-	result := db.Delete(&models.SMS{}, id)
-	if result.Error != nil {
-		return fmt.Errorf("failed to delete SMS: %w", result.Error)
+	ret := db.Delete(&models.SMS{}, id)
+	if ret.Error != nil {
+		return fmt.Errorf("failed to delete SMS: %w", ret.Error)
 	}
-	if result.RowsAffected == 0 {
+	if ret.RowsAffected == 0 {
 		return fmt.Errorf("SMS not found")
 	}
 	return nil
@@ -80,9 +77,9 @@ func BatchDeleteSMS(ids []int) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	result := db.Where("id IN ?", ids).Delete(&models.SMS{})
-	if result.Error != nil {
-		return fmt.Errorf("failed to batch delete SMS: %w", result.Error)
+	err := db.Where("id IN ?", ids).Delete(&models.SMS{}).Error
+	if err != nil {
+		return fmt.Errorf("failed to batch delete SMS: %w", err)
 	}
 	return nil
 }
@@ -92,11 +89,10 @@ func GetSMSByIDs(smsIDs []int) ([]models.SMS, error) {
 	if len(smsIDs) == 0 {
 		return []models.SMS{}, nil
 	}
-	idStr := IntArrayToString(smsIDs)
+
 	var smsList []models.SMS
-	err := db.Where("sms_ids = ?", idStr).
-		Order("receive_time DESC").
-		Find(&smsList).Error
+	str := IntArrayToString(smsIDs)
+	err := db.Where("sms_ids = ?", str).Order("receive_time DESC").Find(&smsList).Error
 	if err != nil {
 		return nil, fmt.Errorf("failed to query SMS by IDs: %w", err)
 	}
@@ -106,8 +102,8 @@ func GetSMSByIDs(smsIDs []int) ([]models.SMS, error) {
 // IsSmsdbEnabled 检查是否启用了数据库存储短信
 func IsSmsdbEnabled() bool {
 	var setting models.Setting
-	result := db.Where("key = ?", "smsdb_enabled").First(&setting)
-	if result.Error != nil {
+	err := db.Where("key = ?", "smsdb_enabled").First(&setting).Error
+	if err != nil {
 		return false
 	}
 	return setting.Value == "true"
@@ -120,8 +116,7 @@ func SaveIncomingSMS(smsData *models.SMS) (*models.SMS, error) {
 	}
 
 	smsData.Direction = "in"
-	err := SaveSMS(smsData)
-	if err != nil {
+	if err := SaveSMS(smsData); err != nil {
 		return nil, err
 	}
 	return smsData, nil
@@ -134,30 +129,16 @@ func SaveOutgoingSMS(smsData *models.SMS) (*models.SMS, error) {
 	}
 
 	smsData.Direction = "out"
-	err := SaveSMS(smsData)
-	if err != nil {
+	if err := SaveSMS(smsData); err != nil {
 		return nil, err
 	}
 	return smsData, nil
 }
 
-// IntArrayToString 将int数组转换为字符串
-func IntArrayToString(arr []int) string {
-	if len(arr) == 0 {
-		return ""
-	}
-	strs := make([]string, len(arr))
-	for i, v := range arr {
-		strs[i] = fmt.Sprintf("%d", v)
-	}
-	return strings.Join(strs, ",")
-}
-
 // GetSettings 获取所有设置
 func GetSettings() (map[string]string, error) {
 	var settings []models.Setting
-	err := db.Find(&settings).Error
-	if err != nil {
+	if err := db.Find(&settings).Error; err != nil {
 		return nil, fmt.Errorf("failed to get settings: %w", err)
 	}
 
@@ -165,6 +146,7 @@ func GetSettings() (map[string]string, error) {
 	for _, setting := range settings {
 		result[setting.Key] = setting.Value
 	}
+
 	return result, nil
 }
 
@@ -176,19 +158,23 @@ func SetSmsdbEnabled(enabled bool) error {
 	}
 
 	setting := models.Setting{Key: "smsdb_enabled", Value: value}
-	result := db.Where(models.Setting{Key: "smsdb_enabled"}).Assign(setting).FirstOrCreate(&setting)
-	if result.Error != nil {
-		return fmt.Errorf("failed to set smsdb_enabled: %w", result.Error)
+	err := db.Where(models.Setting{Key: "smsdb_enabled"}).Assign(setting).FirstOrCreate(&setting).Error
+	if err != nil {
+		return fmt.Errorf("failed to set smsdb_enabled: %w", err)
 	}
 	return nil
 }
 
-// SMSExistsBySMSIDs 检查短信是否已存在于数据库（基于 SMSIDs）
-func SMSExistsBySMSIDs(smsIDs string) bool {
-	var count int64
-	result := db.Model(&models.SMS{}).Where("sms_ids = ?", smsIDs).Count(&count)
-	if result.Error != nil {
-		return false
+// IntArrayToString 将int数组转换为字符串
+func IntArrayToString(arr []int) string {
+	if len(arr) == 0 {
+		return ""
 	}
-	return count > 0
+
+	strs := make([]string, len(arr))
+	for i, v := range arr {
+		strs[i] = fmt.Sprintf("%d", v)
+	}
+
+	return strings.Join(strs, ",")
 }

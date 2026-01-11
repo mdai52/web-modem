@@ -40,11 +40,10 @@ func (s *SmsdbService) SyncSMSToDB(modemName string) (map[string]interface{}, er
 	for _, smsData := range smsList {
 		// 转换为数据库模型
 		modelSMS := atSMSToModelSMS(smsData, conn.PhoneNumber)
-		smsIDs := database.IntArrayToString(smsData.Indices)
 
 		// 检查是否已存在
-		if database.SMSExistsBySMSIDs(smsIDs) {
-			log.Printf("[%s] SMS already exists in database, skipping: %s", modemName, smsIDs)
+		if res, err := database.GetSMSByIDs(smsData.Indices); err == nil && len(res) > 0 {
+			log.Printf("[%s] SMS already exists in database, skipping: %s", modemName, res[0].SMSIDs)
 			continue
 		}
 

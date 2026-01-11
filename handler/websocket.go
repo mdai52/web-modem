@@ -3,6 +3,7 @@ package handler
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/rehiy/web-modem/service"
@@ -34,10 +35,25 @@ func (h *WebSocketHandler) HandleWebSocket(w http.ResponseWriter, r *http.Reques
 	log.Printf("WebSocket client connected: %s", r.RemoteAddr)
 
 	// 直接推送Modem事件到客户端
-	for event := range service.ModemEvent {
-		if err := conn.WriteMessage(websocket.TextMessage, []byte(event)); err != nil {
-			log.Printf("WebSocket write error: %v", err)
-			return
+	for {
+		select {
+		case event, ok := <-service.ModemEvent:
+			if !ok {
+				log.Printf("WebSocket: ModemEvent channel closed")
+				return
+			}
+			conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+			if err := conn.WriteMessage(websocket.TextMessage, []byte(event)); err != nil {
+				log.Printf("WebSocket write error: %v", err)
+				return
+			}
+		case <-time.After(30 * time.Second):
+			// 发送ping保持连接
+			conn.SetWriteDeadline(time.Now().Add(5 * time.Second))
+			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				log.Printf("WebSocket ping error: %v", err)
+				return
+			}
 		}
 	}
 }

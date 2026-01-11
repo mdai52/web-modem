@@ -106,19 +106,22 @@ func (m *ModemService) GetConnect(u string) (*ModemInfo, error) {
 	if !ok {
 		return nil, fmt.Errorf("[%s] not found", n)
 	}
+	if !modem.Connected || modem.Device == nil || modem.Device.IsOpen() == false {
+		return nil, fmt.Errorf("[%s] not connected", n)
+	}
 	return modem, nil
 }
 
 // handleIncomingSMS 处理指定端口的新接收短信
 func (m *ModemService) handleIncomingSMS(portName string, smsIndex int, webhookService *WebhookService) {
-	conn, err := m.GetConnect(portName)
+	modem, err := m.GetConnect(portName)
 	if err != nil {
 		log.Printf("[%s] Failed to get connection for incoming SMS: %v", portName, err)
 		return
 	}
 
 	// 获取短信列表（只获取新短信）
-	smsList, err := conn.ListSMSPdu(4)
+	smsList, err := modem.ListSMSPdu(4)
 	if err != nil {
 		log.Printf("[%s] Failed to list SMS: %v", portName, err)
 		return
@@ -137,7 +140,7 @@ func (m *ModemService) handleIncomingSMS(portName string, smsIndex int, webhookS
 			continue
 		}
 		go func(smsData at.SMS) {
-			modelSMS := atSMSToModelSMS(smsData, conn.PhoneNumber)
+			modelSMS := atSMSToModelSMS(smsData, modem.PhoneNumber)
 			if err := webhookService.HandleIncomingSMS(modelSMS); err != nil {
 				log.Printf("[%s] Failed to handle incoming SMS: %v", portName, err)
 			}
@@ -156,13 +159,13 @@ func (m *ModemService) makeConnect(u string) error {
 	}
 
 	// 检查是否已连接
-	if conn, ok := m.pool[n]; ok {
-		if conn.Test() == nil {
+	if modem, ok := m.pool[n]; ok {
+		if modem.Test() == nil {
 			pf("already connected")
 			return nil
 		}
-		conn.Close()
-		delete(m.pool, n)
+		modem.Connected = false
+		modem.Close()
 	}
 
 	// 创建事件处理函数，写入 ModemEvent 并处理短信
@@ -204,7 +207,7 @@ func (m *ModemService) makeConnect(u string) error {
 	conn.SetSMSMode(0) // PDU 模式
 
 	// 添加到连接池
-	modem := &ModemInfo{
+	m.pool[n] = &ModemInfo{
 		Name:        n,
 		PhoneNumber: "unkown",
 		Connected:   true,
@@ -212,13 +215,12 @@ func (m *ModemService) makeConnect(u string) error {
 	}
 
 	// 获取手机号，用于接收号码
-	if phoneNum, _, err := modem.GetPhoneNumber(); err == nil {
-		modem.PhoneNumber = phoneNum
+	if phone, _, err := conn.GetPhoneNumber(); err == nil {
+		pf("connected, phone number: %s", phone)
+		m.pool[n].PhoneNumber = phone
+	} else {
+		pf("connected, but failed to get phone number: %v", err)
 	}
-
-	// 获取并显示手机号
-	pf("connected, phone number: %s", modem.PhoneNumber)
-	m.pool[n] = modem
 
 	return nil
 }

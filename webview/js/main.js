@@ -3,7 +3,7 @@
    ========================================= */
 
 /**
- * Modem 管理系统主入口
+ * Modem 调测系统主入口
  * 负责初始化所有模块并管理应用生命周期
  */
 
@@ -42,7 +42,7 @@ async function init() {
         app.webSocket = new WebSocketService();
 
         // 记录应用启动日志
-        app.logger.success('Modem 管理系统已启动');
+        app.logger.success('Modem 调测系统已启动');
     } catch (error) {
         console.error('应用初始化失败:', error);
     }

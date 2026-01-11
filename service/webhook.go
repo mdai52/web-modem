@@ -286,6 +286,11 @@ func (w *WebhookService) HandleIncomingSMS(smsData *models.SMS) error {
 
 			// 异步触发webhook，不阻塞主流程
 			go func() {
+				defer func() {
+					if r := recover(); r != nil {
+						log.Printf("[Webhook] Panic recovered: %v", r)
+					}
+				}()
 				if err := w.TriggerWebhooks(smsForWebhook); err != nil {
 					log.Printf("[Webhook] Failed to trigger webhooks: %v", err)
 				}
