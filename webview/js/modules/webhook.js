@@ -6,22 +6,197 @@ import { apiRequest, buildQueryString } from '../utils/api.js';
 import { $ } from '../utils/dom.js';
 
 /**
+ * 预设模板定义
+ * 包含模板数据及显示名称
+ */
+const PRESET_TEMPLATES = {
+    generic: {
+        name: "通用格式",
+        template: {
+            event: "sms_received",
+            data: {
+                content: "{{content}}",
+                send_number: "{{send_number}}",
+                receive_number: "{{receive_number}}",
+                receive_time: "{{receive_time}}",
+                sms_ids: "{{sms_ids}}",
+                direction: "{{direction}}"
+            },
+            timestamp: "{{receive_time}}"
+        }
+    },
+    wechat_work: {
+        name: "企业微信机器人",
+        template: {
+            msgtype: "text",
+            text: {
+                content: "收到短信\n发件人: {{send_number}}\n收件人: {{receive_number}}\n内容: {{content}}\n时间: {{receive_time}}"
+            }
+        }
+    },
+    feige: {
+        name: "飞鸽传书",
+        template: {
+            title: "新短信通知",
+            content: "发件人: {{send_number}}\n收件人: {{receive_number}}\n内容: {{content}}\n时间: {{receive_time}}",
+            timestamp: "{{receive_time}}"
+        }
+    },
+    dingtalk: {
+        name: "钉钉机器人",
+        template: {
+            msgtype: "text",
+            text: {
+                content: "【短信通知】\n发件人: {{send_number}}\n收件人: {{receive_number}}\n内容: {{content}}\n时间: {{receive_time}}"
+            }
+        }
+    },
+    feishu: {
+        name: "飞书机器人",
+        template: {
+            msg_type: "text",
+            content: {
+                text: "【短信通知】\n发件人: {{send_number}}\n收件人: {{receive_number}}\n内容: {{content}}\n时间: {{receive_time}}"
+            }
+        }
+    },
+    discord: {
+        name: "Discord",
+        template: {
+            content: "📱 **收到新短信**",
+            embeds: [
+                {
+                    title: "短信详情",
+                    color: 5814783,
+                    fields: [
+                        {
+                            name: "发件人",
+                            value: "{{send_number}}",
+                            inline: true
+                        },
+                        {
+                            name: "收件人",
+                            value: "{{receive_number}}",
+                            inline: true
+                        },
+                        {
+                            name: "内容",
+                            value: "{{content}}"
+                        },
+                        {
+                            name: "时间",
+                            value: "{{receive_time}}",
+                            inline: true
+                        }
+                    ],
+                    timestamp: "{{receive_time}}"
+                }
+            ]
+        }
+    },
+    slack: {
+        name: "Slack",
+        template: {
+            text: "📱 收到新短信",
+            blocks: [
+                {
+                    type: "header",
+                    text: {
+                        type: "plain_text",
+                        text: "短信通知"
+                    }
+                },
+                {
+                    type: "section",
+                    fields: [
+                        {
+                            type: "mrkdwn",
+                            text: "*发件人:*\n{{send_number}}"
+                        },
+                        {
+                            type: "mrkdwn",
+                            text: "*收件人:*\n{{receive_number}}"
+                        }
+                    ]
+                },
+                {
+                    type: "section",
+                    text: {
+                        type: "mrkdwn",
+                        text: "*内容:*\n{{content}}"
+                    }
+                },
+                {
+                    type: "section",
+                    text: {
+                        type: "mrkdwn",
+                        text: "*时间:* {{receive_time}}"
+                    }
+                }
+            ]
+        }
+    },
+    telegram: {
+        name: "Telegram Bot",
+        template: {
+            chat_id: "",
+            text: "📱 *新短信通知*\n\n发件人: `{{send_number}}`\n收件人: `{{receive_number}}`\n内容: {{content}}\n时间: {{receive_time}}",
+            parse_mode: "Markdown"
+        }
+    }
+};
+
+/**
  * Webhook管理器类
  * 负责管理Webhook配置，包括创建、编辑、删除、测试等功能
  */
 export class WebhookManager {
-
     /**
      * 构造函数
      * 初始化Webhook管理器的基本状态和属性
      */
     constructor() {
         this.currentWebhookId = null;  // 当前编辑的 Webhook ID
+        // 初始化预设模板选项
+        this.initPresetTemplates();
         // Webhook 相关事件
         $('#refreshWebhooksBtn')?.addEventListener('click', () => this.listWebhooks());
         $('#saveWebhookBtn')?.addEventListener('click', () => this.saveWebhook());
         $('#testWebhookBtn')?.addEventListener('click', () => this.testWebhook());
         $('#webhookEnabled')?.addEventListener('change', () => this.updateWebhookSettings());
+        $('#webhookTemplateSelect')?.addEventListener('change', () => this.applyPresetTemplate());
+    }
+
+    /**
+     * 初始化预设模板下拉选项
+     * 根据 PRESET_TEMPLATES 自动生成选项
+     */
+    initPresetTemplates() {
+        const select = $('#webhookTemplateSelect');
+        if (!select) return;
+
+        // 清空现有选项（保留第一个"自定义"选项）
+        const customOption = select.querySelector('option[value="custom"]');
+        select.innerHTML = '';
+        if (customOption) {
+            select.appendChild(customOption);
+        } else {
+            const newCustomOption = document.createElement('option');
+            newCustomOption.value = 'custom';
+            newCustomOption.textContent = '自定义';
+            select.appendChild(newCustomOption);
+        }
+
+        // 根据 PRESET_TEMPLATES 生成选项
+        Object.keys(PRESET_TEMPLATES).forEach(key => {
+            const preset = PRESET_TEMPLATES[key];
+            if (preset.name && preset.template) {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = preset.name;
+                select.appendChild(option);
+            }
+        });
     }
 
     /* =========================================
@@ -104,6 +279,7 @@ export class WebhookManager {
             $('#webhookURL').value = webhook.url;
             $('#webhookTemplate').value = webhook.template;
             $('#webhookEnabledCheckbox').checked = webhook.enabled;
+            $('#webhookTemplateSelect').value = 'custom';
         } catch (error) {
             app.logger.error('加载 Webhook 详情失败: ' + error);
         }
@@ -116,6 +292,31 @@ export class WebhookManager {
         $('#webhookURL').value = '';
         $('#webhookTemplate').value = '{}';
         $('#webhookEnabledCheckbox').checked = true;
+        $('#webhookTemplateSelect').value = 'custom';
+    }
+
+    /**
+     * 应用预设模板
+     * 当用户从下拉框选择预设模板时，自动填充模板内容
+     */
+    applyPresetTemplate() {
+        const select = $('#webhookTemplateSelect');
+        const templateKey = select.value;
+        const templateTextarea = $('#webhookTemplate');
+
+        if (!templateTextarea) return;
+
+        // 如果选择了自定义模板，不进行任何操作
+        if (templateKey === 'custom') {
+            return;
+        }
+
+        // 获取预设模板
+        const preset = PRESET_TEMPLATES[templateKey];
+        if (preset && preset.template) {
+            // 将预设模板格式化为JSON字符串，美化输出
+            templateTextarea.value = JSON.stringify(preset.template, null, 2);
+        }
     }
 
     async saveWebhook() {

@@ -304,10 +304,10 @@ body {
     padding: 0.625rem 1rem;
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    font-size: 0.875rem;
     transition: border-color 0.2s ease;
-    height: 40px;
     box-sizing: border-box;
+    font-size: 0.875rem;
+    height: 40px;
 }
 
 .form-input:focus,
@@ -320,6 +320,7 @@ body {
 .form-textarea {
     resize: vertical;
     min-height: 100px;
+    height: auto;
 }
 
 /* 选择框 */

@@ -102,12 +102,12 @@
                     <div class="card-body">
                         <div class="scroll-container" id="smsList">
                             <div class="sms-item">
-                            <div class="sms-header">
-                                <span class="sms-number">📱 {sms.phoneNumber} &nbsp;</span>
-                                <span class="sms-time">🕐 {sms.time} &nbsp;</span>
-                                <span style="flex: auto;"></span>
-                                <button class="delete-btn" onclick="app.modemManager.deleteSMS({sms.indices})">删除</button>
-                            </div>
+                                <div class="sms-header">
+                                    <span class="sms-number">📱 {sms.phoneNumber} &nbsp;</span>
+                                    <span class="sms-time">🕐 {sms.time} &nbsp;</span>
+                                    <span style="flex: auto;"></span>
+                                    <button class="delete-btn" onclick="app.modemManager.deleteSMS({sms.indices})">删除</button>
+                                </div>
                                 <div class="sms-message">{sms.text}</div>
                             </div>
                         </div>
@@ -296,12 +296,18 @@
                             <input type="text" class="form-input" id="webhookName" placeholder="Webhook名称">
                         </div>
                         <div class="form-group">
+                            <label class="form-label">预设模板</label>
+                            <select class="form-input" id="webhookTemplateSelect">
+                                <option value="custom">自定义</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
                             <label class="form-label">URL</label>
                             <input type="text" class="form-input" id="webhookURL" placeholder="https://example.com/webhook">
                         </div>
                         <div class="form-group">
                             <label class="form-label">模板 (JSON)</label>
-                            <textarea class="form-textarea" id="webhookTemplate" rows="6" placeholder='{"event": "sms_received", "data": {"content": "{{content}}", "send_number": "{{send_number}}"}}'></textarea>
+                            <textarea class="form-textarea" id="webhookTemplate" rows="10" placeholder='{"event": "sms_received", "data": {"content": "{{content}}", "send_number": "{{send_number}}"}}'></textarea>
                             <small style="color: var(--secondary); font-size: 0.75rem;">可用变量: {{content}}, {{send_number}}, {{receive_number}}, {{receive_time}}, {{sms_ids}}, {{direction}}</small>
                         </div>
                         <div class="form-group">
