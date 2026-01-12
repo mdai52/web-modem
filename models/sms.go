@@ -13,6 +13,7 @@ type SMS struct {
 	ReceiveNumber string    `json:"receive_number" gorm:"type:text;index:idx_sms_receive_number"`
 	SendNumber    string    `json:"send_number" gorm:"type:text;index:idx_sms_send_number"`
 	Direction     string    `json:"direction" gorm:"not null;type:text;check:direction IN ('in', 'out');index:idx_sms_direction"` // "in" 或 "out"
+	ModemName     string    `json:"modem_name" gorm:"type:text;index:idx_sms_modem_name"`
 	CreatedAt     time.Time `json:"created_at" gorm:"autoCreateTime"`
 }
 
@@ -20,6 +21,7 @@ type SMS struct {
 type SMSFilter struct {
 	Direction  string    `json:"direction,omitempty"`
 	SendNumber string    `json:"send_number,omitempty"`
+	ModemName  string    `json:"modem_name,omitempty"`
 	StartTime  time.Time `json:"start_time,omitempty"`
 	EndTime    time.Time `json:"end_time,omitempty"`
 	Limit      int       `json:"limit,omitempty"`

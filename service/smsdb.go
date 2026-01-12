@@ -39,7 +39,7 @@ func (s *SmsdbService) SyncSMSToDB(modemName string) (map[string]interface{}, er
 	// 同步每条短信
 	for _, smsData := range smsList {
 		// 转换为数据库模型
-		modelSMS := atSMSToModelSMS(smsData, conn.PhoneNumber)
+		modelSMS := atSMSToModelSMS(smsData, conn.PhoneNumber, modemName)
 
 		// 检查是否已存在
 		if res, err := database.GetSMSByIDs(smsData.Indices); err == nil && len(res) > 0 {

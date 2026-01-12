@@ -7,10 +7,11 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/rehiy/web-modem/models"
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"github.com/glebarez/sqlite"
+
+	"github.com/rehiy/web-modem/models"
 )
 
 var (
@@ -19,6 +20,23 @@ var (
 	dbPath string
 )
 
+// GetDB 获取数据库实例
+func GetDB() *gorm.DB {
+	return db
+}
+
+// Close 关闭数据库连接
+func Close() error {
+	if db != nil {
+		if sqlDB, err := db.DB(); err == nil {
+			return sqlDB.Close()
+		} else {
+			return err
+		}
+	}
+	return nil
+}
+
 // InitDB 初始化数据库连接
 func InitDB() error {
 	var err error
@@ -26,8 +44,7 @@ func InitDB() error {
 		// 获取数据库路径
 		dbPath = os.Getenv("DB_PATH")
 		if dbPath == "" {
-			homeDir, _ := os.UserHomeDir()
-			dbPath = filepath.Join(homeDir, ".web-modem", "data.db")
+			dbPath = "data/modem.db"
 		}
 
 		// 创建目录
@@ -44,14 +61,6 @@ func InitDB() error {
 			return
 		}
 
-		// 设置连接池
-		sqlDB, err := db.DB()
-		if err != nil {
-			return
-		}
-		sqlDB.SetMaxOpenConns(10)
-		sqlDB.SetMaxIdleConns(2)
-
 		// 创建表
 		if err = createTables(); err != nil {
 			return
@@ -60,11 +69,6 @@ func InitDB() error {
 		log.Printf("Database initialized at: %s", dbPath)
 	})
 	return err
-}
-
-// GetDB 获取数据库实例
-func GetDB() *gorm.DB {
-	return db
 }
 
 // createTables 创建数据表
@@ -79,13 +83,9 @@ func createTables() error {
 		return fmt.Errorf("failed to auto migrate: %w", err)
 	}
 
-	// 确保索引存在（GORM 的 AutoMigrate 会根据标签创建索引，但为了保险，我们手动创建）
-	// 如果索引不存在，手动创建（SQLite 不支持 CREATE INDEX IF NOT EXISTS，但我们可以忽略错误）
-	// 这里我们依赖 GORM 的标签，不额外创建。
-
 	// 插入默认设置
 	defaultSettings := map[string]string{
-		"smsdb_enabled": "true",
+		"smsdb_enabled":   "true",
 		"webhook_enabled": "false",
 	}
 
@@ -97,17 +97,5 @@ func createTables() error {
 		}
 	}
 
-	return nil
-}
-
-// Close 关闭数据库连接
-func Close() error {
-	if db != nil {
-		sqlDB, err := db.DB()
-		if err != nil {
-			return err
-		}
-		return sqlDB.Close()
-	}
 	return nil
 }

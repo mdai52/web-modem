@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+
 	"github.com/rehiy/web-modem/service"
 )
 

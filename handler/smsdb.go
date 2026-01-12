@@ -36,6 +36,10 @@ func (h *SmsdbHandler) List(w http.ResponseWriter, r *http.Request) {
 		filter.SendNumber = sendNumber
 	}
 
+	if modemName := r.URL.Query().Get("modem_name"); modemName != "" {
+		filter.ModemName = modemName
+	}
+
 	if startTime := r.URL.Query().Get("start_time"); startTime != "" {
 		if t, err := time.Parse(time.RFC3339, startTime); err == nil {
 			filter.StartTime = t

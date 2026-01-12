@@ -22,8 +22,8 @@ var (
 	ModemEvent    = make(chan string, 100)
 )
 
-// ModemInfo 端口信息
-type ModemInfo struct {
+// ModemConn 端口连接
+type ModemConn struct {
 	Name        string `json:"name"`
 	PhoneNumber string `json:"phoneNumber"`
 	Connected   bool   `json:"connected"`
@@ -32,7 +32,7 @@ type ModemInfo struct {
 
 // ModemService 管理多个串口连接
 type ModemService struct {
-	pool map[string]*ModemInfo
+	pool map[string]*ModemConn
 	mu   sync.Mutex
 }
 
@@ -40,22 +40,10 @@ type ModemService struct {
 func GetModemService() *ModemService {
 	modemOnce.Do(func() {
 		modemInstance = &ModemService{
-			pool: map[string]*ModemInfo{},
+			pool: map[string]*ModemConn{},
 		}
 	})
 	return modemInstance
-}
-
-// GetModems 返回已连接的端口信息
-func (m *ModemService) GetModems() []*ModemInfo {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	var modems []*ModemInfo
-	for _, model := range m.pool {
-		modems = append(modems, model)
-	}
-	return modems
 }
 
 // ScanModems 扫描可用的调制解调器并连接到它们
@@ -95,33 +83,44 @@ func (m *ModemService) ScanModems(devs ...string) {
 	}
 }
 
-// GetConnect 返回给定端口名称的 AT 接口
-func (m *ModemService) GetConnect(u string) (*ModemInfo, error) {
-	n := path.Base(u)
-
+// GetConnects 返回已连接的端口信息
+func (m *ModemService) GetConnects() []*ModemConn {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	modem, ok := m.pool[n]
+	var conns []*ModemConn
+	for _, model := range m.pool {
+		conns = append(conns, model)
+	}
+	return conns
+}
+
+// GetConnect 返回给定端口名称的 AT 接口
+func (m *ModemService) GetConnect(u string) (*ModemConn, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	n := path.Base(u)
+	conn, ok := m.pool[n]
 	if !ok {
 		return nil, fmt.Errorf("[%s] not found", n)
 	}
-	if !modem.Connected || modem.Device == nil || modem.Device.IsOpen() == false {
+	if !conn.Connected || conn.Device == nil || conn.Device.IsOpen() == false {
 		return nil, fmt.Errorf("[%s] not connected", n)
 	}
-	return modem, nil
+	return conn, nil
 }
 
 // handleIncomingSMS 处理指定端口的新接收短信
 func (m *ModemService) handleIncomingSMS(portName string, smsIndex int, webhookService *WebhookService) {
-	modem, err := m.GetConnect(portName)
+	conn, err := m.GetConnect(portName)
 	if err != nil {
 		log.Printf("[%s] Failed to get connection for incoming SMS: %v", portName, err)
 		return
 	}
 
 	// 获取短信列表（只获取新短信）
-	smsList, err := modem.ListSMSPdu(4)
+	smsList, err := conn.ListSMSPdu(4)
 	if err != nil {
 		log.Printf("[%s] Failed to list SMS: %v", portName, err)
 		return
@@ -140,7 +139,7 @@ func (m *ModemService) handleIncomingSMS(portName string, smsIndex int, webhookS
 			continue
 		}
 		go func(smsData at.SMS) {
-			modelSMS := atSMSToModelSMS(smsData, modem.PhoneNumber)
+			modelSMS := atSMSToModelSMS(smsData, conn.PhoneNumber, conn.Name)
 			if err := webhookService.HandleIncomingSMS(modelSMS); err != nil {
 				log.Printf("[%s] Failed to handle incoming SMS: %v", portName, err)
 			}
@@ -159,20 +158,20 @@ func (m *ModemService) makeConnect(u string) error {
 	}
 
 	// 检查是否已连接
-	if modem, ok := m.pool[n]; ok {
-		if modem.Test() == nil {
+	if conn, ok := m.pool[n]; ok {
+		if conn.Test() == nil {
 			pf("already connected")
 			return nil
 		}
-		modem.Connected = false
-		modem.Close()
+		conn.Connected = false
+		conn.Close()
 	}
 
 	// 创建事件处理函数，写入 ModemEvent 并处理短信
-	hf := func(l string, p map[int]string) {
-		ModemEvent <- fmt.Sprintf("[%s] urc:%s %v", n, l, p)
+	hf := func(e string, p map[int]string) {
+		ModemEvent <- fmt.Sprintf("[%s] urc:%s %v", n, e, p)
 		// 处理收到的短信通知
-		if l == "+CMTI" && len(p) > 0 {
+		if e == "+CMTI" && len(p) > 0 {
 			if indexStr, ok := p[1]; ok {
 				if index, err := strconv.Atoi(indexStr); err == nil {
 					w := NewWebhookService()
@@ -194,28 +193,28 @@ func (m *ModemService) makeConnect(u string) error {
 		return err
 	}
 
-	// 创建新的连接
-	conn := at.New(port, hf, &at.Config{Printf: pf})
-	if err := conn.Test(); err != nil {
+	// 链接新设备
+	modem := at.New(port, hf, &at.Config{Printf: pf})
+	if err := modem.Test(); err != nil {
 		pf("at test failed: %v", err)
-		conn.Close()
+		modem.Close()
 		return err
 	}
 
 	// 设置默认参数
-	conn.EchoOff()     // 关闭回显
-	conn.SetSMSMode(0) // PDU 模式
+	modem.EchoOff()     // 关闭回显
+	modem.SetSMSMode(0) // PDU 模式
 
 	// 添加到连接池
-	m.pool[n] = &ModemInfo{
+	m.pool[n] = &ModemConn{
 		Name:        n,
 		PhoneNumber: "unkown",
 		Connected:   true,
-		Device:      conn,
+		Device:      modem,
 	}
 
 	// 获取手机号，用于接收号码
-	if phone, _, err := conn.GetPhoneNumber(); err == nil {
+	if phone, _, err := modem.GetPhoneNumber(); err == nil {
 		pf("connected, phone number: %s", phone)
 		m.pool[n].PhoneNumber = phone
 	} else {

@@ -93,6 +93,12 @@ export class SmsdbManager {
                 filter.end_time = end.toISOString();
             }
 
+            // 使用 header 中的当前 modem 进行过滤
+            const modemName = $('#modemSelect')?.value;
+            if (modemName) {
+                filter.modem_name = modemName;
+            }
+
             const queryString = buildQueryString(filter);
             const result = await apiRequest(`/smsdb/list?${queryString}`);
 

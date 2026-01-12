@@ -1,0 +1,36 @@
+# Binary
+web-modem
+
+# Data directory
+data/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Build
+*.exe
+*.dll
+*.so
+*.dylib
+*.out
+
+# Go workspace
+go.work
+go.work.sum
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp

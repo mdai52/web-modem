@@ -5,8 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rehiy/web-modem/models"
 	"gorm.io/gorm"
+
+	"github.com/rehiy/web-modem/models"
 )
 
 // SaveSMS 保存短信到数据库
@@ -35,6 +36,9 @@ func GetSMSList(filter *models.SMSFilter) ([]models.SMS, int, error) {
 	}
 	if filter.SendNumber != "" {
 		query = query.Where("send_number = ?", filter.SendNumber)
+	}
+	if filter.ModemName != "" {
+		query = query.Where("modem_name = ?", filter.ModemName)
 	}
 	if !filter.StartTime.IsZero() {
 		query = query.Where("receive_time >= ?", filter.StartTime)

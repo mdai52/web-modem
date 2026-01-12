@@ -23,7 +23,7 @@ func NewModemHandler() *ModemHandler {
 // List 返回可用调制解调器的列表
 func (h *ModemHandler) List(w http.ResponseWriter, r *http.Request) {
 	h.ms.ScanModems()
-	modems := h.ms.GetModems()
+	modems := h.ms.GetConnects()
 	respondJSON(w, http.StatusOK, modems)
 }
 
