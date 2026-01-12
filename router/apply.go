@@ -2,10 +2,12 @@ package router
 
 import (
 	"net/http"
+	"os"
 
 	"github.com/gorilla/mux"
 
 	"github.com/rehiy/web-modem/handler"
+	"github.com/rehiy/web-modem/webview"
 )
 
 func Apply() *mux.Router {
@@ -81,6 +83,10 @@ func WebSocketRegister(r *mux.Router) {
 }
 
 func StaticServer(r *mux.Router) {
-	fs := http.FileServer(http.Dir("./webview"))
-	r.PathPrefix("/").Handler(fs)
+	hfs := http.FileServer(http.FS(webview.FS))
+	if _, err := os.Stat("./webview"); err == nil {
+		hfs = http.FileServer(http.Dir("./webview"))
+	}
+
+	r.PathPrefix("/").Handler(hfs)
 }
