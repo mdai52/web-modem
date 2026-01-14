@@ -152,7 +152,8 @@ export class WebhookManager {
      * 初始化Webhook管理器的基本状态和属性
      */
     constructor() {
-        this.currentWebhookId = null;  // 当前编辑的 Webhook ID
+        // 当前编辑的 Webhook ID
+        this.currentWebhookId = null;
         // 初始化预设模板选项
         this.initPresetTemplates();
     }
@@ -248,13 +249,14 @@ export class WebhookManager {
      * 当用户从下拉框选择预设模板时，自动填充模板内容
      */
     applyPresetTemplate() {
-        const select = $('#webhookTemplateSelect');
-        const templateKey = select.value;
         const templateTextarea = $('#webhookTemplate');
-
-        if (!templateTextarea) return;
+        if (!templateTextarea) {
+            return;
+        }
 
         // 如果选择了自定义模板，不进行任何操作
+        const select = $('#webhookTemplateSelect');
+        const templateKey = select.value;
         if (templateKey === 'custom') {
             return;
         }

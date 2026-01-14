@@ -6,7 +6,6 @@ import { apiRequest, buildQueryString } from '../utils/api.js';
  * 负责管理所有Modem相关的操作，包括连接、通信、短信处理等
  */
 export class ModemManager {
-
     /**
      * 构造函数
      * 初始化Modem管理器的基本状态和属性
