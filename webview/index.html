@@ -147,9 +147,11 @@
                         </div>
                         <div class="form-group">
                             <label class="form-label">短信内容</label>
-                            <textarea class="form-textarea" id="smsMessage" placeholder="输入短信内容..."></textarea>
+                            <textarea class="form-textarea" id="smsMessage" placeholder="输入短信内容..." oninput="app.modemManager.updateSMSCounter()"></textarea>
                         </div>
-                        <div id="smsCounter"></div>
+                        <div id="smsCounter" class="sms-counter">
+                            <span>字符数: 0 / 160</span> | <span>短信条数: 1</span> | <span>编码: GSM 7-bit</span>
+                        </div>
                     </div>
                 </div>
 
@@ -343,6 +345,7 @@
         <div class="logger-content">
             <div class="log-container" id="logContainer"></div>
         </div>
+        <div class="logger-resize-handle" title="拖动调整大小">⋰</div>
     </div>
 
     <script type="module" src="js/main.js"></script>

@@ -22,19 +22,20 @@
 
 /* 收缩状态 */
 .logger.collapsed {
-    height: 40px;
+    height: 40px !important;
 }
 
 .logger.collapsed .logger-content {
-    display: none;
+    display: none !important;
 }
 
 /* 日志面板头部 */
 .logger-header {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.75rem 1rem;
+    padding: 0.75rem 1rem 0.75rem 1.75rem;
     background: var(--primary);
     color: white;
     border-radius: var(--radius) var(--radius) 0 0;
@@ -107,4 +108,31 @@
 
 .log-entry.error {
     color: var(--danger);
+}
+
+/* 拖动调整大小的手柄 */
+.logger-resize-handle {
+    position: absolute;
+    content: '⋰';
+    top: 5px;
+    left: 5px;
+    width: 20px;
+    height: 20px;
+    z-index: 10;
+    color: white;
+    cursor: nwse-resize;
+    opacity: 0.3;
+    transition: all 0.2s ease;
+    background: linear-gradient(135deg, transparent 50%, var(--primary) 50%);
+    border-radius: 0 0 0 4px;
+}
+
+
+.logger-resize-handle:hover {
+    opacity: 1;
+    transform: scale(1.2);
+}
+
+.logger.resizing {
+    transition: none;
 }

@@ -11,7 +11,7 @@
 }
 
 .sms-item:hover {
-    background: #f8f9fa;
+    background: var(--light);
 }
 
 .sms-item:last-child {
@@ -52,4 +52,11 @@
     font-size: 0.9rem;
     word-wrap: break-word;
     margin-bottom: 0.5rem;
+}
+
+/* 短信计数 */
+.sms-counter {
+    margin-top: 5px;
+    color: var(--secondary);
+    font-size: 12px;
 }

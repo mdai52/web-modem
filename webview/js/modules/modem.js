@@ -13,7 +13,6 @@ export class ModemManager {
      */
     constructor() {
         this.name = null;
-        this.setupSMSCounter();
         this.refreshModems();
     }
 
@@ -218,24 +217,6 @@ export class ModemManager {
     /* =========================================
        短信计数器 (SMS Counter)
        ========================================= */
-
-    /**
-     * 设置短信计数器
-     * 创建并初始化短信字符计数显示
-     */
-    setupSMSCounter() {
-        const textarea = $('#smsMessage');
-        if (!textarea) return;
-
-        if (!$('#smsCounter')) {
-            const counter = document.createElement('div');
-            counter.id = 'smsCounter';
-            counter.style.cssText = 'margin-top: 5px; color: #666; font-size: 12px;';
-            textarea.parentNode.appendChild(counter);
-            textarea.addEventListener('input', () => this.updateSMSCounter());
-        }
-        this.updateSMSCounter();
-    }
 
     /**
      * 更新短信计数器

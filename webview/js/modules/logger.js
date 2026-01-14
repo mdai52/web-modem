@@ -1,4 +1,4 @@
-import { $, escapeHtml } from '../utils/dom.js';
+import { $ } from '../utils/dom.js';
 
 /**
  * 全局日志面板类
@@ -9,23 +9,75 @@ export class Logger {
      * 构造函数
      */
     constructor() {
-        this.isExpanded = true;
+        this.expanded = true;
         this.container = $('#logContainer');
+        this.panel = $('#logPanel');
+        this.initResize();
+    }
+
+    /**
+     * 初始化拖动调整大小功能
+     */
+    initResize() {
+        const resizeHandle = document.querySelector('.logger-resize-handle');
+        if (!resizeHandle) {
+            console.log('Logger: 拖动手柄未找到');
+            return;
+        }
+        console.log('Logger: 拖动手柄初始化成功');
+
+        let startX, startY;
+        let startWidth, startHeight;
+        let isResizing = false;
+
+        resizeHandle.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            startWidth = this.panel.offsetWidth;
+            startHeight = this.panel.offsetHeight;
+            this.panel.classList.add('resizing');
+            console.log('Logger: 开始拖动', { startWidth, startHeight });
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+
+            const deltaX = startX - e.clientX;
+            const deltaY = startY - e.clientY;
+
+            const newWidth = Math.max(300, Math.min(800, startWidth + deltaX));
+            const newHeight = Math.max(200, Math.min(window.innerHeight * 0.8, startHeight + deltaY));
+
+            this.panel.style.width = newWidth + 'px';
+            this.panel.style.height = newHeight + 'px';
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isResizing) {
+                isResizing = false;
+                this.panel.classList.remove('resizing');
+                console.log('Logger: 拖动结束', {
+                    width: this.panel.offsetWidth,
+                    height: this.panel.offsetHeight
+                });
+            }
+        });
     }
 
     /**
      * 切换收缩/展开状态
      */
     toggle() {
-        const panel = $('#logPanel');
-        if (this.isExpanded) {
-            panel.classList.remove('expanded');
-            panel.classList.add('collapsed');
-            this.isExpanded = false;
+        if (this.expanded) {
+            this.panel.classList.remove('expanded');
+            this.panel.classList.add('collapsed');
+            this.expanded = false;
         } else {
-            panel.classList.remove('collapsed');
-            panel.classList.add('expanded');
-            this.isExpanded = true;
+            this.panel.classList.remove('collapsed');
+            this.panel.classList.add('expanded');
+            this.expanded = true;
         }
     }
 

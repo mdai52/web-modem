@@ -36,7 +36,7 @@
 /* AT 命令终端 - 用于显示 AT 命令执行结果 */
 .terminal {
     background: var(--dark);
-    color: #10b981;
+    color: var(--success);
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
     font-size: 0.75rem;
     padding: 1rem;
@@ -47,4 +47,3 @@
     white-space: pre-wrap;
     word-wrap: break-word;
 }
-
