@@ -41,18 +41,18 @@ func ModemRegister(r *mux.Router) {
 	r.HandleFunc("/modem/signal", mh.GetModemSignalStrength).Methods("GET")
 
 	// 短信读写
-	r.HandleFunc("/modem/sms/list", mh.ListModemSMS).Methods("GET")
-	r.HandleFunc("/modem/sms/send", mh.SendModemSMS).Methods("POST")
-	r.HandleFunc("/modem/sms/delete", mh.DeleteModemSMS).Methods("POST")
+	r.HandleFunc("/modem/sms/list", mh.ListModemSms).Methods("GET")
+	r.HandleFunc("/modem/sms/send", mh.SendModemSms).Methods("POST")
+	r.HandleFunc("/modem/sms/delete", mh.DeleteModemSms).Methods("POST")
 }
 
 func SmsdbRegister(r *mux.Router) {
 	dh := handler.NewSmsdbHandler()
 
 	// 短信存储管理
-	r.HandleFunc("/smsdb/list", dh.ListSMS).Methods("GET")
-	r.HandleFunc("/smsdb/delete", dh.DeleteSMSBatch).Methods("POST")
-	r.HandleFunc("/smsdb/sync", dh.SyncSMS).Methods("POST")
+	r.HandleFunc("/smsdb/list", dh.ListSms).Methods("GET")
+	r.HandleFunc("/smsdb/delete", dh.DeleteSmsBatch).Methods("POST")
+	r.HandleFunc("/smsdb/sync", dh.SyncSms).Methods("POST")
 }
 
 func WebhookRegister(r *mux.Router) {

@@ -128,7 +128,7 @@ export class ModemManager {
      * 列出短信
      * 获取当前Modem中的短信列表
      */
-    async listSMS() {
+    async listSms() {
         app.logger.info('正在读取短信列表 ...');
         const queryString = buildQueryString({ name: this.name });
         const smsList = await apiRequest(`/modem/sms/list?${queryString}`);
@@ -146,7 +146,7 @@ export class ModemManager {
      * 发送短信
      * 通过选中的Modem发送短信
      */
-    async sendSMS() {
+    async sendSms() {
         const number = $('#smsNumber').value.trim();
         const message = $('#smsMessage').value.trim();
         if (!number || !message) {
@@ -160,7 +160,7 @@ export class ModemManager {
             app.logger.success('短信发送成功', number);
             $('#smsNumber').value = '';
             $('#smsMessage').value = '';
-            this.updateSMSCounter();
+            this.updateSmsCounter();
         } catch (error) {
             app.logger.error('发送短信失败: ' + error);
         }
@@ -171,7 +171,7 @@ export class ModemManager {
      * 删除Modem中的指定短信
      * @param {Array|number} indices - 短信索引或索引数组
      */
-    async deleteSMS(indices) {
+    async deleteSms(indices) {
         if (!this.name) {
             app.logger.error('请先选择串口');
             return;
@@ -188,7 +188,7 @@ export class ModemManager {
             await apiRequest('/modem/sms/delete', 'POST', { name: this.name, indices: indicesArray });
             app.logger.success('短信删除成功！');
             // 删除成功后重新加载短信列表
-            await this.listSMS();
+            await this.listSms();
         } catch (error) {
             app.logger.error('删除短信失败: ' + error);
         }
@@ -202,7 +202,7 @@ export class ModemManager {
      * 更新短信计数器
      * 根据短信内容计算字符数、编码方式和短信条数
      */
-    updateSMSCounter() {
+    updateSmsCounter() {
         const textarea = $('#smsMessage');
         const counter = $('#smsCounter');
         if (!textarea || !counter) return;

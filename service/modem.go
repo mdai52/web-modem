@@ -111,18 +111,18 @@ func (m *ModemService) GetConn(u string) (*ModemConn, error) {
 	return conn, nil
 }
 
-// handleIncomingSMS 处理指定端口的新接收短信
-func (m *ModemService) handleIncomingSMS(portName string, smsIndex int) {
+// handleIncomingSms 处理指定端口的新接收短信
+func (m *ModemService) handleIncomingSms(portName string, smsIndex int) {
 	conn, err := m.GetConn(portName)
 	if err != nil {
-		log.Printf("[%s] Failed to get connection for incoming SMS: %v", portName, err)
+		log.Printf("[%s] Failed to get connection for incoming Sms: %v", portName, err)
 		return
 	}
 
 	// 获取短信列表（只获取新短信）
-	smsList, err := conn.ListSMSPdu(4)
+	smsList, err := conn.ListSmsPdu(4)
 	if err != nil {
-		log.Printf("[%s] Failed to list SMS: %v", portName, err)
+		log.Printf("[%s] Failed to list Sms: %v", portName, err)
 		return
 	}
 
@@ -131,18 +131,18 @@ func (m *ModemService) handleIncomingSMS(portName string, smsIndex int) {
 
 	// 处理每条短信
 	for _, sms := range smsList {
-		hasNewSMS := false
+		hasNewSms := false
 		for _, idx := range sms.Indices {
 			if idx == smsIndex {
-				hasNewSMS = true
+				hasNewSms = true
 				break
 			}
 		}
-		if hasNewSMS {
-			log.Printf("[%s] New SMS from %s: %s", portName, sms.Number, sms.Text)
-			modelSMS := atSMSToModelSMS(sms, conn.Number, conn.Name)
-			smsdbService.HandleIncomingSMS(modelSMS)
-			webhookService.HandleIncomingSMS(modelSMS)
+		if hasNewSms {
+			log.Printf("[%s] New Sms from %s: %s", portName, sms.Number, sms.Text)
+			modelSms := atSmsToModelSms(sms, conn.Number, conn.Name)
+			smsdbService.HandleIncomingSms(modelSms)
+			webhookService.HandleIncomingSms(modelSms)
 		}
 	}
 }
@@ -177,7 +177,7 @@ func (m *ModemService) makeConnect(u string) error {
 		if e == "+CMTI" && len(p) > 0 {
 			if indexStr, ok := p[1]; ok {
 				if index, err := strconv.Atoi(indexStr); err == nil {
-					m.handleIncomingSMS(n, index)
+					m.handleIncomingSms(n, index)
 				}
 			}
 		}
@@ -205,7 +205,7 @@ func (m *ModemService) makeConnect(u string) error {
 
 	// 设置默认参数
 	modem.EchoOff()     // 关闭回显
-	modem.SetSMSMode(0) // PDU 模式
+	modem.SetSmsMode(0) // PDU 模式
 
 	// 添加到连接池
 	m.pool[n] = &ModemConn{

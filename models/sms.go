@@ -4,11 +4,11 @@ import (
 	"time"
 )
 
-// SMS 短信模型
-type SMS struct {
+// Sms 短信模型
+type Sms struct {
 	ID            int       `json:"id" gorm:"primaryKey;autoIncrement"`
 	Content       string    `json:"content" gorm:"not null;type:text"`
-	SMSIDs        string    `json:"sms_ids" gorm:"not null;type:text"`
+	SmsIDs        string    `json:"sms_ids" gorm:"not null;type:text"`
 	ReceiveTime   time.Time `json:"receive_time" gorm:"not null;index:idx_sms_receive_time"`
 	ReceiveNumber string    `json:"receive_number" gorm:"type:text;index:idx_sms_receive_number"`
 	SendNumber    string    `json:"send_number" gorm:"type:text;index:idx_sms_send_number"`
@@ -17,8 +17,8 @@ type SMS struct {
 	CreatedAt     time.Time `json:"created_at" gorm:"autoCreateTime"`
 }
 
-// SMSFilter 短信查询过滤器
-type SMSFilter struct {
+// SmsFilter 短信查询过滤器
+type SmsFilter struct {
 	Direction  string    `json:"direction,omitempty"`
 	SendNumber string    `json:"send_number,omitempty"`
 	ModemName  string    `json:"modem_name,omitempty"`

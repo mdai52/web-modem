@@ -61,7 +61,7 @@ export class TabManager {
     loadTabData() {
         switch (this.currentTab) {
             case 'sms':
-                app.modemManager.listSMS();
+                app.modemManager.listSms();
                 break;
             case 'smsdb':
                 app.settingManager.loadSettings();

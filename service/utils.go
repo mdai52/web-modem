@@ -8,21 +8,21 @@ import (
 	"github.com/rehiy/web-modem/models"
 )
 
-// atSMSToModelSMS 将AT短信转换为数据库模型
-func atSMSToModelSMS(atSMS at.SMS, receiveNumber string, modemName string) *models.SMS {
-	return &models.SMS{
-		Content:       atSMS.Text,
-		SMSIDs:        database.IntArrayToString(atSMS.Indices),
-		ReceiveTime:   parseSMSTime(atSMS.Time),
+// atSmsToModelSms 将AT短信转换为数据库模型
+func atSmsToModelSms(atSms at.Sms, receiveNumber string, modemName string) *models.Sms {
+	return &models.Sms{
+		Content:       atSms.Text,
+		SmsIDs:        database.IntArrayToString(atSms.Indices),
+		ReceiveTime:   parseSmsTime(atSms.Time),
 		ReceiveNumber: receiveNumber,
-		SendNumber:    atSMS.Number,
+		SendNumber:    atSms.Number,
 		Direction:     "in",
 		ModemName:     modemName,
 	}
 }
 
-// parseSMSTime 解析短信时间字符串
-func parseSMSTime(timeStr string) time.Time {
+// parseSmsTime 解析短信时间字符串
+func parseSmsTime(timeStr string) time.Time {
 	if timeStr == "" {
 		return time.Now()
 	}

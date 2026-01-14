@@ -75,7 +75,7 @@ func InitDB() error {
 func createTables() error {
 	// 自动迁移
 	err := db.AutoMigrate(
-		&models.SMS{},
+		&models.Sms{},
 		&models.Webhook{},
 		&models.Setting{},
 	)

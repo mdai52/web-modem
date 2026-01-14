@@ -23,9 +23,9 @@ func NewSmsdbHandler() *SmsdbHandler {
 	}
 }
 
-// ListSMS 获取数据库中的短信列表
-func (h *SmsdbHandler) ListSMS(w http.ResponseWriter, r *http.Request) {
-	filter := &models.SMSFilter{}
+// ListSms 获取数据库中的短信列表
+func (h *SmsdbHandler) ListSms(w http.ResponseWriter, r *http.Request) {
+	filter := &models.SmsFilter{}
 
 	// 解析查询参数
 	if direction := r.URL.Query().Get("direction"); direction != "" {
@@ -66,7 +66,7 @@ func (h *SmsdbHandler) ListSMS(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	smsList, total, err := database.GetSMSList(filter)
+	smsList, total, err := database.GetSmsList(filter)
 	if err != nil {
 		respondJSON(w, http.StatusInternalServerError, H{"error": err.Error()})
 		return
@@ -80,8 +80,8 @@ func (h *SmsdbHandler) ListSMS(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// DeleteSMSBatch 批量删除数据库中的短信
-func (h *SmsdbHandler) DeleteSMSBatch(w http.ResponseWriter, r *http.Request) {
+// DeleteSmsBatch 批量删除数据库中的短信
+func (h *SmsdbHandler) DeleteSmsBatch(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		IDs []int `json:"ids"`
 	}
@@ -96,7 +96,7 @@ func (h *SmsdbHandler) DeleteSMSBatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := database.BatchDeleteSMS(req.IDs); err != nil {
+	if err := database.BatchDeleteSms(req.IDs); err != nil {
 		respondJSON(w, http.StatusInternalServerError, H{"error": err.Error()})
 		return
 	}
@@ -107,8 +107,8 @@ func (h *SmsdbHandler) DeleteSMSBatch(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// SyncSMS 从指定Modem同步短信到数据库
-func (h *SmsdbHandler) SyncSMS(w http.ResponseWriter, r *http.Request) {
+// SyncSms 从指定Modem同步短信到数据库
+func (h *SmsdbHandler) SyncSms(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Name string `json:"name"`
 	}
@@ -122,7 +122,7 @@ func (h *SmsdbHandler) SyncSMS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.smsdbService.SyncSMSToDB(req.Name)
+	result, err := h.smsdbService.SyncSmsToDB(req.Name)
 	if err != nil {
 		respondJSON(w, http.StatusInternalServerError, H{"error": err.Error()})
 		return

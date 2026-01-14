@@ -54,7 +54,7 @@ func (w *WebhookService) getCachedWebhooks() ([]models.Webhook, error) {
 }
 
 // TriggerWebhooks 触发所有启用的webhook
-func (w *WebhookService) TriggerWebhooks(sms *models.SMS) error {
+func (w *WebhookService) TriggerWebhooks(sms *models.Sms) error {
 	if !database.IsWebhookEnabled() {
 		return nil
 	}
@@ -86,13 +86,13 @@ func (w *WebhookService) TriggerWebhooks(sms *models.SMS) error {
 	}
 
 	wg.Wait()
-	log.Printf("[Webhook] Successfully triggered %d webhooks for SMS", len(webhooks))
+	log.Printf("[Webhook] Successfully triggered %d webhooks for Sms", len(webhooks))
 
 	return nil
 }
 
 // triggerWebhook 触发单个webhook，支持重试机制
-func (w *WebhookService) triggerWebhook(webhook *models.Webhook, sms *models.SMS) error {
+func (w *WebhookService) triggerWebhook(webhook *models.Webhook, sms *models.Sms) error {
 	maxRetries := 3
 	retryDelay := 2 * time.Second
 
@@ -157,7 +157,7 @@ func (w *WebhookService) triggerWebhook(webhook *models.Webhook, sms *models.SMS
 }
 
 // preparePayload 准备webhook payload
-func (w *WebhookService) preparePayload(webhook *models.Webhook, sms *models.SMS) ([]byte, error) {
+func (w *WebhookService) preparePayload(webhook *models.Webhook, sms *models.Sms) ([]byte, error) {
 	// 如果template为空或不是有效的JSON，使用默认模板
 	if webhook.Template == "" || webhook.Template == "{}" {
 		return w.getDefaultPayload(sms)
@@ -178,13 +178,13 @@ func (w *WebhookService) preparePayload(webhook *models.Webhook, sms *models.SMS
 }
 
 // getDefaultPayload 获取默认payload
-func (w *WebhookService) getDefaultPayload(sms *models.SMS) ([]byte, error) {
+func (w *WebhookService) getDefaultPayload(sms *models.Sms) ([]byte, error) {
 	payload := map[string]any{
 		"event": "sms_received",
 		"data": map[string]any{
 			"id":             sms.ID,
 			"content":        sms.Content,
-			"sms_ids":        sms.SMSIDs,
+			"sms_ids":        sms.SmsIDs,
 			"receive_time":   sms.ReceiveTime.Format(time.RFC3339),
 			"receive_number": sms.ReceiveNumber,
 			"send_number":    sms.SendNumber,
@@ -197,7 +197,7 @@ func (w *WebhookService) getDefaultPayload(sms *models.SMS) ([]byte, error) {
 }
 
 // replaceTemplateVariables 替换模板中的变量
-func (w *WebhookService) replaceTemplateVariables(template map[string]any, sms *models.SMS) map[string]any {
+func (w *WebhookService) replaceTemplateVariables(template map[string]any, sms *models.Sms) map[string]any {
 	result := make(map[string]any)
 
 	for key, value := range template {
@@ -215,10 +215,10 @@ func (w *WebhookService) replaceTemplateVariables(template map[string]any, sms *
 }
 
 // replaceStringVariables 替换字符串中的变量
-func (w *WebhookService) replaceStringVariables(s string, sms *models.SMS) string {
+func (w *WebhookService) replaceStringVariables(s string, sms *models.Sms) string {
 	replacements := map[string]string{
 		"{{content}}":        sms.Content,
-		"{{sms_ids}}":        sms.SMSIDs,
+		"{{sms_ids}}":        sms.SmsIDs,
 		"{{receive_time}}":   sms.ReceiveTime.Format(time.RFC3339),
 		"{{receive_number}}": sms.ReceiveNumber,
 		"{{send_number}}":    sms.SendNumber,
@@ -234,21 +234,21 @@ func (w *WebhookService) replaceStringVariables(s string, sms *models.SMS) strin
 
 // TestWebhook 测试webhook
 func (w *WebhookService) TestWebhook(webhook *models.Webhook) error {
-	testSMS := &models.SMS{
+	testSms := &models.Sms{
 		ID:            0,
 		Content:       "Test webhook message",
-		SMSIDs:        "1,2,3",
+		SmsIDs:        "1,2,3",
 		ReceiveTime:   time.Now(),
 		ReceiveNumber: "+8613800138000",
 		SendNumber:    "+8613800138001",
 		Direction:     "in",
 	}
 
-	return w.triggerWebhook(webhook, testSMS)
+	return w.triggerWebhook(webhook, testSms)
 }
 
-// HandleIncomingSMS 处理接收到的短信：触发 webhook
-func (w *WebhookService) HandleIncomingSMS(dbSMS *models.SMS) {
+// HandleIncomingSms 处理接收到的短信：触发 webhook
+func (w *WebhookService) HandleIncomingSms(dbSms *models.Sms) {
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
@@ -256,7 +256,7 @@ func (w *WebhookService) HandleIncomingSMS(dbSMS *models.SMS) {
 			}
 		}()
 		if database.IsWebhookEnabled() {
-			if err := w.TriggerWebhooks(dbSMS); err != nil {
+			if err := w.TriggerWebhooks(dbSms); err != nil {
 				log.Printf("[Webhook] Failed to trigger webhooks: %v", err)
 			}
 		}

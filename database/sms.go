@@ -10,8 +10,8 @@ import (
 	"github.com/rehiy/web-modem/models"
 )
 
-// CreateSMS 保存短信到数据库
-func CreateSMS(sms *models.SMS) error {
+// CreateSms 保存短信到数据库
+func CreateSms(sms *models.Sms) error {
 	// 确保必要字段已设置
 	if sms.Direction == "" {
 		sms.Direction = "in"
@@ -22,54 +22,54 @@ func CreateSMS(sms *models.SMS) error {
 
 	err := db.Create(sms).Error
 	if err != nil {
-		return fmt.Errorf("failed to save SMS: %w", err)
+		return fmt.Errorf("failed to save Sms: %w", err)
 	}
 	return nil
 }
 
-// DeleteSMS 根据数据库ID删除短信
-func DeleteSMS(id int) error {
-	ret := db.Delete(&models.SMS{}, id)
+// DeleteSms 根据数据库ID删除短信
+func DeleteSms(id int) error {
+	ret := db.Delete(&models.Sms{}, id)
 	if ret.Error != nil {
-		return fmt.Errorf("failed to delete SMS: %w", ret.Error)
+		return fmt.Errorf("failed to delete Sms: %w", ret.Error)
 	}
 	if ret.RowsAffected == 0 {
-		return fmt.Errorf("SMS not found")
+		return fmt.Errorf("Sms not found")
 	}
 	return nil
 }
 
-// BatchDeleteSMS 批量删除短信
-func BatchDeleteSMS(ids []int) error {
+// BatchDeleteSms 批量删除短信
+func BatchDeleteSms(ids []int) error {
 	if len(ids) == 0 {
 		return nil
 	}
 
-	err := db.Where("id IN ?", ids).Delete(&models.SMS{}).Error
+	err := db.Where("id IN ?", ids).Delete(&models.Sms{}).Error
 	if err != nil {
-		return fmt.Errorf("failed to batch delete SMS: %w", err)
+		return fmt.Errorf("failed to batch delete Sms: %w", err)
 	}
 	return nil
 }
 
-// GetSMSListByIDs 根据短信模块的ID查询
-func GetSMSListByIDs(smsIDs []int) ([]models.SMS, error) {
+// GetSmsListByIDs 根据短信模块的ID查询
+func GetSmsListByIDs(smsIDs []int) ([]models.Sms, error) {
 	if len(smsIDs) == 0 {
-		return []models.SMS{}, nil
+		return []models.Sms{}, nil
 	}
 
-	var smsList []models.SMS
+	var smsList []models.Sms
 	str := IntArrayToString(smsIDs)
 	err := db.Where("sms_ids = ?", str).Order("receive_time DESC").Find(&smsList).Error
 	if err != nil {
-		return nil, fmt.Errorf("failed to query SMS by IDs: %w", err)
+		return nil, fmt.Errorf("failed to query Sms by IDs: %w", err)
 	}
 	return smsList, nil
 }
 
-// GetSMSList 查询短信列表
-func GetSMSList(filter *models.SMSFilter) ([]models.SMS, int, error) {
-	query := db.Model(&models.SMS{})
+// GetSmsList 查询短信列表
+func GetSmsList(filter *models.SmsFilter) ([]models.Sms, int, error) {
+	query := db.Model(&models.Sms{})
 
 	if filter.Direction != "" {
 		query = query.Where("direction = ?", filter.Direction)
@@ -91,14 +91,14 @@ func GetSMSList(filter *models.SMSFilter) ([]models.SMS, int, error) {
 	var total int64
 	countQuery := query.Session(&gorm.Session{})
 	if err := countQuery.Count(&total).Error; err != nil {
-		return nil, 0, fmt.Errorf("failed to count SMS: %w", err)
+		return nil, 0, fmt.Errorf("failed to count Sms: %w", err)
 	}
 
 	// 查询列表
-	var smsList []models.SMS
+	var smsList []models.Sms
 	err := query.Order("receive_time DESC").Limit(filter.Limit).Offset(filter.Offset).Find(&smsList).Error
 	if err != nil {
-		return nil, 0, fmt.Errorf("failed to query SMS: %w", err)
+		return nil, 0, fmt.Errorf("failed to query Sms: %w", err)
 	}
 
 	return smsList, int(total), nil

@@ -117,7 +117,7 @@
                 <div class="card">
                     <div class="card-header">
                         <h2 class="card-title">接收短信</h2>
-                        <button class="btn btn-secondary" onclick="app.modemManager.listSMS()">刷新列表</button>
+                        <button class="btn btn-secondary" onclick="app.modemManager.listSms()">刷新列表</button>
                     </div>
                     <div class="card-body">
                         <div class="scroll-container" id="smsList">
@@ -126,7 +126,7 @@
                                     <span class="sms-number">📱 {sms.number} &nbsp;</span>
                                     <span class="sms-time">🕐 {sms.time} &nbsp;</span>
                                     <span class="flex-auto"></span>
-                                    <button class="btn btn-small btn-danger" onclick="app.modemManager.deleteSMS({sms.indices})">删除</button>
+                                    <button class="btn btn-small btn-danger" onclick="app.modemManager.deleteSms({sms.indices})">删除</button>
                                 </div>
                                 <div class="sms-message">{sms.text}</div>
                             </div>
@@ -138,7 +138,7 @@
                 <div class="card">
                     <div class="card-header">
                         <h2 class="card-title">发送短信</h2>
-                        <button class="btn btn-primary" onclick="app.modemManager.sendSMS()">发送短信</button>
+                        <button class="btn btn-primary" onclick="app.modemManager.sendSms()">发送短信</button>
                     </div>
                     <div class="card-body">
                         <div class="form-group">
@@ -147,7 +147,7 @@
                         </div>
                         <div class="form-group">
                             <label class="form-label">短信内容</label>
-                            <textarea class="form-textarea" id="smsMessage" placeholder="输入短信内容..." oninput="app.modemManager.updateSMSCounter()"></textarea>
+                            <textarea class="form-textarea" id="smsMessage" placeholder="输入短信内容..." oninput="app.modemManager.updateSmsCounter()"></textarea>
                         </div>
                         <div id="smsCounter" class="sms-counter">
                             <span>字符数: 0 / 160</span> | <span>短信条数: 1</span> | <span>编码: GSM 7-bit</span>
@@ -165,7 +165,7 @@
                         <h2 class="card-title">短信存储管理</h2>
                         <div>
                             <button class="btn btn-secondary" onclick="app.smsdbManager.listSmsdb()">刷新</button>
-                            <button class="btn btn-success" onclick="app.smsdbManager.syncCurrentModemSMS()">同步</button>
+                            <button class="btn btn-success" onclick="app.smsdbManager.syncCurrentModemSms()">同步</button>
                             <button class="btn btn-danger" onclick="app.smsdbManager.deleteSelectedSmsdb()">删除</button>
                         </div>
                     </div>

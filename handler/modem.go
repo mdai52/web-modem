@@ -146,8 +146,8 @@ func (h *ModemHandler) GetModemSignalStrength(w http.ResponseWriter, r *http.Req
 	})
 }
 
-// SendModemSMS 发送短信
-func (h *ModemHandler) SendModemSMS(w http.ResponseWriter, r *http.Request) {
+// SendModemSms 发送短信
+func (h *ModemHandler) SendModemSms(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Name    string `json:"name"`
 		Number  string `json:"number"`
@@ -164,15 +164,15 @@ func (h *ModemHandler) SendModemSMS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := conn.SendSMSPdu(req.Number, req.Message); err != nil {
+	if err := conn.SendSmsPdu(req.Number, req.Message); err != nil {
 		respondJSON(w, http.StatusInternalServerError, H{"error": err.Error()})
 	} else {
 		respondJSON(w, http.StatusOK, H{"status": "sent"})
 	}
 }
 
-// ListModemSMS 获取调制解调器中的所有短信
-func (h *ModemHandler) ListModemSMS(w http.ResponseWriter, r *http.Request) {
+// ListModemSms 获取调制解调器中的所有短信
+func (h *ModemHandler) ListModemSms(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get("name")
 	if name == "" {
 		respondJSON(w, http.StatusBadRequest, H{"error": "name is empty"})
@@ -185,7 +185,7 @@ func (h *ModemHandler) ListModemSMS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	smsList, err := conn.ListSMSPdu(4)
+	smsList, err := conn.ListSmsPdu(4)
 	if err != nil {
 		respondJSON(w, http.StatusInternalServerError, H{"error": err.Error()})
 		return
@@ -194,8 +194,8 @@ func (h *ModemHandler) ListModemSMS(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, smsList)
 }
 
-// DeleteModemSMS 删除短信
-func (h *ModemHandler) DeleteModemSMS(w http.ResponseWriter, r *http.Request) {
+// DeleteModemSms 删除短信
+func (h *ModemHandler) DeleteModemSms(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Name    string `json:"name"`
 		Indices []int  `json:"indices"`
@@ -211,7 +211,7 @@ func (h *ModemHandler) DeleteModemSMS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := conn.DeleteSMS(req.Indices); err != nil {
+	if err := conn.DeleteSms(req.Indices); err != nil {
 		respondJSON(w, http.StatusInternalServerError, H{"error": err.Error()})
 	} else {
 		respondJSON(w, http.StatusOK, H{"status": "deleted", "count": len(req.Indices)})

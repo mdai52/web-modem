@@ -192,20 +192,20 @@ export class SmsdbManager {
     /**
      * 同步当前选中的Modem短信到数据库
      */
-    async syncCurrentModemSMS() {
+    async syncCurrentModemSms() {
         const modemName = $('#modemSelect').value;
         if (!modemName) {
             app.logger.error('请先选择串口');
             return;
         }
-        await this.syncModemSMS(modemName);
+        await this.syncModemSms(modemName);
     }
 
     /**
      * 同步指定Modem的短信到数据库
      * @param {string} modemName - Modem名称
      */
-    async syncModemSMS(modemName) {
+    async syncModemSms(modemName) {
         try {
             app.logger.info(`正在同步 ${modemName} 的短信...`);
             const result = await apiRequest('/smsdb/sync', 'POST', { name: modemName });
