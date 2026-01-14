@@ -21,7 +21,7 @@ func main() {
 		port = listenPort
 	}
 
-	// 初始化数据库
+	// 连接数据库
 	if err := database.InitDB(); err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
