@@ -53,3 +53,28 @@ export function buildQueryString(params) {
 
     return queryParams.toString();
 }
+
+/**
+ * 获取运营商PLMN信息
+ * 请求 https://api.rehi.org/plmn/{运营商ID} 返回运营商信息
+ * @param {string|number} op - 运营商 or ID
+ * @returns {Promise<object>} 解析后的响应数据，包含运营商信息
+ * @throws {Error} 当请求失败或响应状态码非200时抛出错误
+ */
+export async function getPlmnInfo(op) {
+    const url = `https://api.rehi.org/plmn/${op}`;
+
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || '请求失败');
+        }
+
+        return data;
+    } catch (error) {
+        app.logger.error(`获取PLMN信息失败: ${op}`, error);
+        throw error;
+    }
+}

@@ -1,5 +1,5 @@
 import { $ } from '../utils/dom.js';
-import { apiRequest, buildQueryString } from '../utils/api.js';
+import { apiRequest, buildQueryString, getPlmnInfo } from '../utils/api.js';
 
 /**
  * Modem管理器类
@@ -63,6 +63,13 @@ export class ModemManager {
         // 渲染模板
         const container = $('#modemInfo');
         container.innerHTML = app.render.render('modemInfo', { info });
+        // 使用运营商ID查询运营商信息，并替换当前的运营商名称
+        getPlmnInfo(info.operator).then(plmn => {
+            const replace = `${plmn.operator}(${info.operator})`
+            container.innerHTML = container.innerHTML.replace(info.operator, replace);
+        }).catch(error => {
+            app.logger.error('获取PLMN信息失败: ' + error);
+        });
     }
 
     /**
