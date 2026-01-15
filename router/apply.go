@@ -38,7 +38,7 @@ func ModemRegister(r *mux.Router) {
 	// 模块操作
 	r.HandleFunc("/modem/send", mh.SendModemCommand).Methods("POST")
 	r.HandleFunc("/modem/info", mh.GetModemBasicInfo).Methods("GET")
-	r.HandleFunc("/modem/signal", mh.GetModemSignalStrength).Methods("GET")
+	r.HandleFunc("/modem/signal", mh.GetModemSignal).Methods("GET")
 
 	// 短信读写
 	r.HandleFunc("/modem/sms/list", mh.ListModemSms).Methods("GET")

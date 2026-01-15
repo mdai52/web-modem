@@ -97,20 +97,23 @@ func (h *ModemHandler) GetModemBasicInfo(w http.ResponseWriter, r *http.Request)
 		info["operator"] = operator
 		info["act"] = act
 	}
-	// 获取短信模式
-	if mode, err := conn.GetSmsMode(); err == nil {
-		info["sms_mode"] = mode
-	}
 	// 获取短信中心
 	if center, _, err := conn.GetSmsCenter(); err == nil {
 		info["sms_center"] = center
+	}
+	// 获取短信模式
+	if mode, err := conn.GetSmsMode(); err == nil {
+		info["sms_mode"] = "text"
+		if mode == 0 {
+			info["sms_mode"] = "pdu"
+		}
 	}
 
 	respondJSON(w, http.StatusOK, info)
 }
 
-// GetModemSignalStrength 获取当前信号强度
-func (h *ModemHandler) GetModemSignalStrength(w http.ResponseWriter, r *http.Request) {
+// GetModemSignal 获取当前信号强度
+func (h *ModemHandler) GetModemSignal(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get("name")
 	if name == "" {
 		respondJSON(w, http.StatusBadRequest, H{"error": "name is empty"})
@@ -129,25 +132,14 @@ func (h *ModemHandler) GetModemSignalStrength(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	// 计算信号等级
+	dbm := -113
 	level := 0
-	if rssi >= 20 {
-		level = 5
-	} else if rssi >= 15 {
-		level = 4
-	} else if rssi >= 10 {
-		level = 3
-	} else if rssi >= 5 {
-		level = 2
-	} else if rssi >= 1 {
-		level = 1
+	if rssi != 99 {
+		dbm = (rssi * 2) - 113
+		level = min(100, rssi*5)
 	}
-
-	// 将 RSSI 转换为 dBm: dBm = -113 + (rssi * 2)
-	dbm := -113 + (rssi * 2)
-
 	respondJSON(w, http.StatusOK, map[string]any{
-		"rssi":  rssi,
+		"rssi":  rssi, // 通常是 0-31 的整数
 		"ber":   ber,
 		"level": level,
 		"dbm":   dbm,
