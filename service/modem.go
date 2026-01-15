@@ -130,19 +130,27 @@ func (m *ModemService) handleIncomingSms(portName string, smsIndex int) {
 	webhookService := NewWebhookService()
 
 	// 处理每条短信
-	for _, sms := range smsList {
+	for _, atSms := range smsList {
 		hasNewSms := false
-		for _, idx := range sms.Indices {
+		for _, idx := range atSms.Indices {
 			if idx == smsIndex {
 				hasNewSms = true
 				break
 			}
 		}
 		if hasNewSms {
-			log.Printf("[%s] New Sms from %s: %s", portName, sms.Number, sms.Text)
-			modelSms := atSmsToModelSms(sms, conn.Number, conn.Name)
+			log.Printf("[%s] New Sms from %s: %s", portName, atSms.Number, atSms.Text)
+			modelSms := atSmsToModelSms(atSms, conn.Number, conn.Name)
 			smsdbService.HandleIncomingSms(modelSms)
 			webhookService.HandleIncomingSms(modelSms)
+			// 自动删除设备上的短信
+			go func() {
+				if err := conn.DeleteSms(atSms.Indices); err != nil {
+					log.Printf("[%s] failed to delete Sms: %v", portName, err)
+				} else {
+					log.Printf("[%s] Sms deleted automatically, indices: %v", portName, atSms.Indices)
+				}
+			}()
 		}
 	}
 }
@@ -206,6 +214,7 @@ func (m *ModemService) makeConnect(u string) error {
 	// 设置默认参数
 	modem.EchoOff()     // 关闭回显
 	modem.SetSmsMode(0) // PDU 模式
+	modem.SetSmsStore("ME", "ME", "ME")
 
 	// 添加到连接池
 	m.pool[n] = &ModemConn{
