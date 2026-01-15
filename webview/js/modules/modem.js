@@ -1,5 +1,6 @@
 import { $ } from '../utils/dom.js';
 import { apiRequest, buildQueryString, getPlmnInfo } from '../utils/api.js';
+import { AT_COMMANDS } from './modem.cmd.js';
 
 /**
  * Modem管理器类
@@ -13,6 +14,7 @@ export class ModemManager {
     constructor() {
         this.name = null;
         this.refreshModems();
+        this.renderATCommandSelect();
     }
 
     /* =========================================
@@ -114,12 +116,46 @@ export class ModemManager {
      * 当下拉菜单选择改变时，将选中的命令填充到输入框
      * @param {string} value - 选中的AT命令
      */
-    onATCommandSelect(value) {
+    selectATCommand(value) {
         const atCommandInput = $('#atCommand');
         if (atCommandInput) {
             atCommandInput.value = value;
             atCommandInput.focus();
         }
+    }
+
+    /**
+     * 渲染AT命令快捷指令下拉菜单
+     * 使用AT_COMMANDS数据动态生成选项
+     */
+    renderATCommandSelect() {
+        const select = $('.form-select[onchange*=\"selectATCommand\"]');
+        if (!select) return;
+
+        // 清空现有选项（保留第一个\"-- 选择快捷指令 --\"选项）
+        const firstOption = select.querySelector('option[value=\"\"]');
+        select.innerHTML = '';
+        if (firstOption) {
+            select.appendChild(firstOption);
+        } else {
+            const newFirstOption = document.createElement('option');
+            newFirstOption.value = '';
+            newFirstOption.textContent = '-- 选择快捷指令 --';
+            select.appendChild(newFirstOption);
+        }
+
+        // 根据AT_COMMANDS数据生成optgroup和option
+        AT_COMMANDS.forEach(group => {
+            const optgroup = document.createElement('optgroup');
+            optgroup.label = group.label;
+            group.options.forEach(opt => {
+                const option = document.createElement('option');
+                option.value = opt.value;
+                option.textContent = opt.text;
+                optgroup.appendChild(option);
+            });
+            select.appendChild(optgroup);
+        });
     }
 
     /**
