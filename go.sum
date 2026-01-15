@@ -35,6 +35,8 @@ github.com/rehiy/modem v0.0.4-0.20260114121319-e769b515c70c h1:QeFuompLrXRQnwa9w
 github.com/rehiy/modem v0.0.4-0.20260114121319-e769b515c70c/go.mod h1:grvSshsV0nOl/4Fz6HMuXHiwcioRTfi7B8iuk5DuZKI=
 github.com/rehiy/modem v0.0.4 h1:ldY+glkPqY4bcvleWgfaOy68RqY8csLx8xPjKWDEm6Y=
 github.com/rehiy/modem v0.0.4/go.mod h1:grvSshsV0nOl/4Fz6HMuXHiwcioRTfi7B8iuk5DuZKI=
+github.com/rehiy/modem v0.0.5-0.20260115045044-9b200b70f8a8 h1:iFm2HHnNyRmQdcomsq2s5OigJA4Lner+4rZU236+Y6w=
+github.com/rehiy/modem v0.0.5-0.20260115045044-9b200b70f8a8/go.mod h1:grvSshsV0nOl/4Fz6HMuXHiwcioRTfi7B8iuk5DuZKI=
 github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec h1:W09IVJc94icq4NjY3clb7Lk8O1qJ8BdBEF8z0ibU0rE=
 github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec/go.mod h1:qqbHyh8v60DhA7CoWK5oRCqLrMHRGoxYCSS9EjAz6Eo=
 github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07 h1:UyzmZLoiDWMRywV4DUYb9Fbt8uiOSooupjTq10vpvnU=

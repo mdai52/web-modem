@@ -8,7 +8,7 @@ require (
 	github.com/glebarez/sqlite v1.11.0
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
-	github.com/rehiy/modem v0.0.4
+	github.com/rehiy/modem v0.0.5-0.20260115045044-9b200b70f8a8
 	github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07
 	gorm.io/gorm v1.31.1
 )

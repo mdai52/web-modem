@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/rehiy/modem/vars"
 	"github.com/rehiy/web-modem/service"
 )
 
@@ -94,6 +95,7 @@ func (h *ModemHandler) GetModemBasicInfo(w http.ResponseWriter, r *http.Request)
 	}
 	// 获取运营商
 	if _, _, operator, act, err := conn.GetOperator(); err == nil {
+		info["operator_cn"] = vars.GetOperatorInfo(operator).BrandCN
 		info["operator"] = operator
 		info["act"] = act
 	}
