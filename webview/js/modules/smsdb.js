@@ -1,4 +1,4 @@
-import { $, $$, copyText } from '../utils/dom.js';
+import { $, $$ } from '../utils/dom.js';
 import { apiRequest, buildQueryString } from '../utils/api.js';
 
 /**
