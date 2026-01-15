@@ -4,7 +4,7 @@
  */
 
 import { Logger } from './modules/logger.js';
-import { UIrender } from './utils/render.js';
+import { UIrender } from './utils/dom.js';
 
 import { ModemManager } from './modules/modem.js';
 import { SmsdbManager } from './modules/smsdb.js';
