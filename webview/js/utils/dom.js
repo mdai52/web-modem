@@ -49,7 +49,7 @@ export class UIrender {
             const element = $(`#${elementId}`);
             if (element) {
                 this.templates[templateKey] = element.innerHTML || '';
-                element.innerHTML = '';
+                element.innerHTML = '<small class="p-1">Loading ...</small>';
             }
         }
     }

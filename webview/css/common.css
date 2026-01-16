@@ -421,14 +421,17 @@ body {
  * 工具类 (Utility Classes)
  */
 
+.p-1 {
+    padding: 1rem;
+}
+
+.mt-1 {
+    margin-top: 1rem;
+}
+
 /* 弹性布局工具 */
 .flex-auto {
     flex: auto;
-}
-
-/* 间距工具 */
-.mt-1 {
-    margin-top: 1rem;
 }
 
 /* 小型次要文本 */
