@@ -10,7 +10,7 @@ import (
 	"github.com/rehiy/web-modem/webview"
 )
 
-func Apply() *mux.Router {
+func Apply() http.Handler {
 	r := mux.NewRouter()
 
 	// API 路由
@@ -26,7 +26,8 @@ func Apply() *mux.Router {
 	// 静态文件服务
 	StaticServer(r)
 
-	return r
+	// 应用 Basic Auth 中间件
+	return BasicAuthMiddleware(r)
 }
 
 func ModemRegister(r *mux.Router) {

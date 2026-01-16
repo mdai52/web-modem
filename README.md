@@ -46,6 +46,7 @@
 - **数据同步**：将 Modem 中的短信同步到数据库
 - **缓存优化**：Webhook 列表缓存，提升性能
 - **跨平台**：支持 Linux、Windows、macOS 系统
+- **身份认证**：支持 HTTP Basic Auth 保护 API 访问
 
 ## 🏗️ 技术架构
 
@@ -372,6 +373,44 @@ Content-Type: application/json
 | `DB_PATH` | 数据库文件路径 | `./data/modem.db` | `/var/lib/modem.db` |
 | `HTTP_ADDR` | HTTP 监听地址 | `:8080` | `:80` |
 | `LOG_LEVEL` | 日志级别 | `info` | `debug`, `warn`, `error` |
+| `BASIC_AUTH_USER` | Basic Auth 用户名 | 无（不启用） | `admin` |
+| `BASIC_AUTH_PASSWORD` | Basic Auth 密码 | 无（不启用） | `secret123` |
+
+### Basic Auth 认证
+
+项目支持 HTTP Basic Auth 来保护所有 API、WebSocket 和静态页面访问。
+
+**启用认证**
+
+设置以下环境变量：
+
+```bash
+# Linux/Mac
+export BASIC_AUTH_USER=admin
+export BASIC_AUTH_PASSWORD=your_secure_password
+./web-modem
+
+# Windows
+set BASIC_AUTH_USER=admin
+set BASIC_AUTH_PASSWORD=your_secure_password
+web-modem.exe
+```
+
+**认证方式**
+
+```bash
+# curl 使用认证
+curl -u admin:your_password http://localhost:8080/api/modem/list
+
+# 浏览器访问时，会弹出认证对话框
+# 输入用户名和密码即可访问
+```
+
+**说明**
+
+- 如果不设置 `BASIC_AUTH_USER` 和 `BASIC_AUTH_PASSWORD`，认证功能不会启用，所有请求可以直接访问
+- 启用后，所有请求（API、WebSocket、静态页面）都需要认证
+- 认证信息通过 HTTP Basic Auth 传输，建议配合 HTTPS 使用
 
 ### 配置文件示例
 
@@ -453,8 +492,8 @@ CREATE TABLE settings (
 
 ### 安全建议
 
-1. **访问控制**：在生产环境部署时，建议添加身份认证机制
-2. **网络安全**：使用 HTTPS 协议保护数据传输安全
+1. **访问控制**：在生产环境部署时，建议启用 Basic Auth 认证（设置 `BASIC_AUTH_USER` 和 `BASIC_AUTH_PASSWORD`）
+2. **网络安全**：使用 HTTPS 协议保护数据传输安全，避免 Basic Auth 凭据泄露
 3. **设备权限**：确保有足够的串口访问权限（Linux 下建议加入 dialout 组）
 4. **数据备份**：定期备份数据库，防止数据丢失
 
