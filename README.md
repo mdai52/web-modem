@@ -28,12 +28,14 @@
 访问 [Releases](https://github.com/rehiy/web-modem/releases) 下载对应系统的二进制文件：
 
 ```bash
-# 配置认证
+# 配置认证（可选）
 export BASIC_AUTH_USER=admin
 export BASIC_AUTH_PASSWORD=password
 # 启动服务
 chmod +x web-modem && ./web-modem
 ```
+
+访问 `http://localhost:8080` 打开 Web 界面。
 
 ### 源码编译
 
@@ -49,8 +51,6 @@ go mod download
 go build -o web-modem .
 ./web-modem
 ```
-
-访问 `http://localhost:8080` 打开 Web 界面。
 
 ### 配置选项
 
@@ -151,23 +151,29 @@ WS /ws/modem                   # Modem 事件实时推送
 
 ### 常见问题
 
-**Q: Linux 下无法访问串口？**
+**Q: Linux 下扫描不到设备？**
+
+某些 USB Modem 设备可能需要加载驱动补丁才能被识别
 
 ```bash
-sudo usermod -a -G dialout $USER
-# 注销后重新登录
-```
-
-**Q: 扫描不到设备？**
-
-```bash
+# 修改设备 ID 和 MAC 以匹配实际设备，然后再运行
+chmod +x patch.sh && ./patch.sh
 # Linux 查看串口
 ls -la /dev/ttyUSB*
 # Windows 查看 COM 端口
 mode
 ```
 
+**Q: Linux 下无法访问串口？**
+
+添加用户到 dialout 组，然后重启
+
+```bash
+sudo usermod -a -G dialout $USER
+```
+
 **Q: Webhook 触发失败？**
+
 检查目标 URL 是否可达，查看日志，确认功能已启用。
 
 ## 📄 许可证
