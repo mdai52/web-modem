@@ -24,6 +24,8 @@ github.com/ncruces/go-strftime v1.0.0 h1:HMFp8mLCTPp341M/ZnA4qaf7ZlsbTc+miZjCLOF
 github.com/ncruces/go-strftime v1.0.0/go.mod h1:Fwc5htZGVVkseilnfgOVb9mKy6w1naJmn9CehxcKcls=
 github.com/rehiy/modem v0.0.5-0.20260115130404-b054f9eb4e7b h1:rNUDROPNFzPa2/tHqIAnKx9xtS8YYQMu3evJ4yrtNNs=
 github.com/rehiy/modem v0.0.5-0.20260115130404-b054f9eb4e7b/go.mod h1:grvSshsV0nOl/4Fz6HMuXHiwcioRTfi7B8iuk5DuZKI=
+github.com/rehiy/modem v0.0.5 h1:yEQxqxMKLgmbWIBqEiL7kr6C0t1oXfGZsrwRiIXQZqk=
+github.com/rehiy/modem v0.0.5/go.mod h1:grvSshsV0nOl/4Fz6HMuXHiwcioRTfi7B8iuk5DuZKI=
 github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec h1:W09IVJc94icq4NjY3clb7Lk8O1qJ8BdBEF8z0ibU0rE=
 github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec/go.mod h1:qqbHyh8v60DhA7CoWK5oRCqLrMHRGoxYCSS9EjAz6Eo=
 github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07 h1:UyzmZLoiDWMRywV4DUYb9Fbt8uiOSooupjTq10vpvnU=
